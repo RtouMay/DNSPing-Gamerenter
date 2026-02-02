@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>تست DNS گیم‌رنتر | تست DNS</title>
+<title>تست DNS گیم رنتر</title>
 
 <style>
 @font-face{
@@ -115,8 +115,8 @@ body{
 }
 .header .brandName{
   font-weight:700;
-  font-size:16px;
-  line-height:1.2;
+  font-size:15px;
+  line-height:1.4;
 }
 
 /* ===== Form ===== */
@@ -490,7 +490,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     <div class="loader" id="loader">
       <div class="loaderBox">
         <div class="spinner" aria-hidden="true"></div>
-        <div class="loaderTitle">گیم رنتر</div>
+        <div class="loaderTitle">تست DNS گیم رنتر</div>
         <div class="loaderStep" id="loaderText">در حال آماده‌سازی هستیم…</div>
 
         <div class="loaderExtra" id="loaderExtra">
@@ -502,14 +502,14 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 
     <div class="header">
       <img src="logo.png" alt="Game Renter">
-      <div class="brandName">گیم رنتر</div>
+      <div class="brandName">تست DNS گیم رنتر</div>
     </div>
 
     <label>DNS را وارد کنید (DNS دوم اختیاری است)</label>
     <div class="inputs">
       <div class="inputWrap">
         <input id="primary" inputmode="decimal" autocomplete="off"
-               placeholder="Primary DNS (مثل 8.8.8.8 یا 1.1.1.1)">
+               placeholder="Primary DNS (مثل 8.8.8.8)">
       </div>
       <div class="inputWrap">
         <input id="secondary" inputmode="decimal" autocomplete="off"
@@ -549,7 +549,6 @@ const loaderExtra = document.getElementById('loaderExtra');
 const cancelBtn = document.getElementById('cancelBtn');
 
 const grid = document.getElementById('grid');
-
 const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
 
 let currentController = null;
@@ -599,9 +598,9 @@ function fakeProgress(){
 function friendlyError(apiError){
   switch(apiError){
     case "invalid_primary":
-      return "Primary DNS درست وارد نشده. نمونه: 8.8.8.8 یا 1.1.1.1";
+      return "Primary DNS معتبر نیست. نمونه: 8.8.8.8";
     case "invalid_secondary":
-      return "Secondary DNS درست وارد نشده. اگر نیاز ندارید، خالی بگذارید.";
+      return "Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.";
     case "private_primary":
       return "Primary DNS خصوصی/لوکال است. بهتر است یک DNS عمومی وارد کنید.";
     case "private_secondary":
@@ -615,7 +614,6 @@ function friendlyError(apiError){
   }
 }
 
-/* کوتاه‌سازی فقط برای نمایش */
 function shortenDomain(d){
   d = String(d || "");
   if(d.length <= 26) return d;
@@ -681,13 +679,13 @@ function setAllTesting(){
     b.classList.add("testing");
   });
 
-  GROUP_ORDER.forEach(k=>{
+  for(const k of GROUP_ORDER){
     const st = document.getElementById(`state-${k}`);
     if(st) st.textContent = "در حال تست…";
     const p = document.getElementById(`p-${k}`); if(p) p.textContent = "Primary: …";
     const s = document.getElementById(`s-${k}`); if(s) s.textContent = "Secondary: …";
     const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال دریافت نتیجه…";
-  });
+  }
 }
 
 function renderDnsBlock(label, g){
@@ -791,7 +789,7 @@ btn.onclick = async ()=>{
   const s = normalizeDigits(secondary.value.trim());
 
   if(!p || !looksLikeIp(p)){
-    showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8 یا 1.1.1.1");
+    showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8");
     return;
   }
   if(s && !looksLikeIp(s)){
@@ -807,18 +805,15 @@ btn.onclick = async ()=>{
   setAllTesting();
   showLoader("در حال آماده‌سازی هستیم…");
 
-  // 20s -> show hint + cancel
   softTimeoutId = setTimeout(()=>{
     loaderExtra.classList.add("show");
   }, 20000);
 
-  // 120s -> auto cancel
   hardTimeoutId = setTimeout(()=>{
     cancelRequest("خطا در سرور");
   }, 120000);
 
   const stop = fakeProgress();
-
   currentController = new AbortController();
 
   try{
@@ -843,7 +838,6 @@ btn.onclick = async ()=>{
 
     stop();
     bar.style.width = "100%";
-
     clearTimers();
     currentController = null;
 
@@ -873,7 +867,6 @@ btn.onclick = async ()=>{
     bar.style.width = "100%";
     clearTimers();
 
-    // اگر کاربر خودش لغو کرده بود
     if(e && (e.name === "AbortError")){
       hideLoader();
       showError("تست متوقف شد.");
