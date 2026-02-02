@@ -37,11 +37,7 @@
   --bad:#ef4444;
 }
 
-*{
-  box-sizing:border-box;
-  font-family: "YekanBakh", system-ui, sans-serif;
-}
-
+*{ box-sizing:border-box; font-family:"YekanBakh", system-ui, sans-serif; }
 body{
   margin:0;
   color:var(--text);
@@ -52,12 +48,7 @@ body{
     var(--bg);
 }
 
-.container{
-  min-height:100vh;
-  display:grid;
-  place-items:center;
-  padding:24px;
-}
+.container{ min-height:100vh; display:grid; place-items:center; padding:24px; }
 
 .card{
   width:100%;
@@ -74,25 +65,17 @@ body{
   position:relative;
   overflow:hidden;
 }
+@keyframes in{ from{opacity:0; transform:translateY(14px) scale(.99)} to{opacity:1; transform:translateY(0) scale(1)} }
 
-@keyframes in{
-  from{opacity:0; transform:translateY(14px) scale(.99)}
-  to{opacity:1; transform:translateY(0) scale(1)}
-}
-
-/* افکت‌های ویدیویی */
 .card:before{
   content:"";
-  position:absolute;
-  inset:-2px;
+  position:absolute; inset:-2px;
   background:radial-gradient(600px 220px at 50% 0%, rgba(225,29,72,.22), transparent 60%);
   pointer-events:none;
 }
-
 .card:after{
   content:"";
-  position:absolute;
-  inset:-40%;
+  position:absolute; inset:-40%;
   background:
     radial-gradient(600px 260px at 20% 15%, rgba(225,29,72,.22), transparent 60%),
     radial-gradient(500px 240px at 85% 25%, rgba(251,113,133,.18), transparent 65%),
@@ -105,21 +88,14 @@ body{
   pointer-events:none;
   z-index:0;
 }
-
 @keyframes videoGlow{
   0%{transform:translate3d(-2%,-2%,0) scale(1)}
   50%{transform:translate3d(2%,1%,0) scale(1.04)}
   100%{transform:translate3d(-2%,-2%,0) scale(1)}
 }
-
-.card .noise,
-.card .scanlines{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  z-index:1;
+.card .noise, .card .scanlines{
+  position:absolute; inset:0; pointer-events:none; z-index:1;
 }
-
 .card .scanlines{
   background: repeating-linear-gradient(
     to bottom,
@@ -128,99 +104,297 @@ body{
     transparent 1px,
     transparent 6px
   );
-  opacity:.1;
+  opacity:.10;
+  mix-blend-mode: overlay;
 }
-
 .card .noise{
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
   opacity:.08;
-  animation:noiseMove .35s steps(2) infinite;
+  mix-blend-mode: overlay;
+  animation: noiseMove .35s steps(2) infinite;
 }
-
 @keyframes noiseMove{
-  0%{transform:translate(0,0)}
-  50%{transform:translate(1%,-1%)}
-  100%{transform:translate(0,0)}
+  0%{ transform: translate(0,0); }
+  25%{ transform: translate(-2%, 1%); }
+  50%{ transform: translate(1%, -2%); }
+  75%{ transform: translate(-1%, -1%); }
+  100%{ transform: translate(0,0); }
 }
 
-/* محتوا */
-.header, label, .inputWrap, button, .progress, .steps, .panel, .footer{
-  position:relative;
-  z-index:2;
-}
+/* content z-index */
+.header, label, .inputWrap, button, .progress, .steps, .panel, .footer{ position:relative; z-index:2; }
 
-.header{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  margin-bottom:18px;
-}
-
+.header{ display:flex; align-items:center; gap:14px; margin-bottom:18px; }
 .header img{
   width:92px;
+  height:auto;
   filter:drop-shadow(0 14px 30px rgba(225,29,72,.38));
-  animation:logoFloat 3.6s ease-in-out infinite;
+  animation: logoFloat 3.6s ease-in-out infinite;
+  transform-origin:center;
 }
-
 @keyframes logoFloat{
-  0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-6px)}
+  0%,100%{ transform: translateY(0) scale(1); }
+  50%{ transform: translateY(-6px) scale(1.03); }
 }
+.header .title{ margin:0; font-size:20px; letter-spacing:.2px; font-weight:700; }
+.header .sub{ color:var(--muted); font-size:13px; margin-top:4px; }
 
-.header .title{
-  margin:0;
-  font-size:20px;
-  font-weight:700;
-}
-
-.header .sub{
-  font-size:13px;
-  color:var(--muted);
-}
-
-label{
-  font-size:14px;
-  color:var(--muted);
-  margin:12px 0 8px;
-}
+label{ display:block; color:var(--muted); font-size:14px; margin:12px 0 8px; }
+.inputWrap{ position:relative; }
 
 input{
   width:100%;
   padding:14px 16px;
   border-radius:16px;
-  border:1px solid var(--border);
-  background:#0b1022;
+  border:1px solid rgba(27,36,68,.95);
+  background:rgba(11,16,34,.9);
   color:var(--text);
-  font-size:15px;
+  font-size:16px;
+  outline:none;
+  transition:.25s;
+}
+input:focus{ border-color:rgba(225,29,72,.9); box-shadow:0 0 0 4px rgba(225,29,72,.18); }
+
+.shake{ animation:shake .35s ease; }
+@keyframes shake{
+  0%{transform:translateX(0)} 25%{transform:translateX(-6px)}
+  50%{transform:translateX(6px)} 75%{transform:translateX(-4px)}
+  100%{transform:translateX(0)}
 }
 
 button{
   width:100%;
   margin-top:14px;
-  padding:14px;
+  padding:14px 16px;
   border-radius:18px;
   border:none;
-  font-size:16px;
-  font-weight:700;
   color:white;
-  background:linear-gradient(135deg, var(--red), var(--red2));
+  font-size:16px;
   cursor:pointer;
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  box-shadow:0 12px 30px rgba(225,29,72,.25);
+  transition:.25s;
+  font-weight:700;
+}
+button:hover{ transform:translateY(-1px) }
+button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
+
+.progress{
+  margin-top:18px;
+  height:10px;
+  border-radius:999px;
+  background:rgba(11,16,34,.9);
+  border:1px solid rgba(27,36,68,.95);
+  overflow:hidden;
+}
+.progress i{
+  display:block;
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg, var(--red), var(--red2));
+  transition:width .35s cubic-bezier(.2,.8,.2,1);
 }
 
-.footer{
-  margin-top:14px;
-  text-align:center;
-  font-size:12px;
+.steps{ margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; }
+.pill{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 10px; border-radius:999px;
+  background:rgba(11,16,34,.9);
+  border:1px solid rgba(27,36,68,.95);
   color:var(--muted);
+  font-size:13px;
+  transition:.25s;
+}
+.dot{ width:8px; height:8px; border-radius:50%; background:rgba(156,163,175,.55); }
+.pill.active{ color:var(--text); border-color:rgba(225,29,72,.55); box-shadow:0 0 0 3px rgba(225,29,72,.12); }
+.pill.active .dot{ background:linear-gradient(180deg, var(--red), var(--red2)); box-shadow:0 0 16px rgba(225,29,72,.6); }
+.pill.done{ color:var(--text); border-color:rgba(34,197,94,.55); }
+.pill.done .dot{ background:var(--ok); box-shadow:0 0 16px rgba(34,197,94,.45); }
+.pill.fail{ color:var(--text); border-color:rgba(239,68,68,.55); }
+.pill.fail .dot{ background:var(--bad); box-shadow:0 0 16px rgba(239,68,68,.45); }
+
+.panel{
+  margin-top:18px;
+  padding:16px;
+  border-radius:18px;
+  background:rgba(11,16,34,.9);
+  border:1px dashed rgba(27,36,68,.95);
+  animation:pop .35s ease;
+}
+@keyframes pop{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
+
+.row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid rgba(27,36,68,.55); }
+.row:last-child{ border-bottom:none }
+
+.badge{
+  font-size:12px;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(27,36,68,.95);
+  color:var(--muted);
+  background:rgba(7,10,18,.35);
+}
+.badge.ok{ color:#d1fae5; border-color:rgba(34,197,94,.55) }
+.badge.warn{ color:#fff7ed; border-color:rgba(251,191,36,.55) }
+.badge.bad{ color:#fee2e2; border-color:rgba(239,68,68,.55) }
+
+.miniBar{
+  margin-top:8px;
+  height:8px;
+  border-radius:999px;
+  overflow:hidden;
+  background:rgba(7,10,18,.35);
+  border:1px solid rgba(27,36,68,.55);
+}
+.miniBar i{
+  display:block;
+  height:100%;
+  width:0%;
+  transition:width .45s cubic-bezier(.2,.8,.2,1);
+}
+
+.footer{ margin-top:14px; text-align:center; color:var(--muted); font-size:12px; line-height:1.8; }
+
+/* ================= CINEMATIC LOADER ================= */
+.loader{
+  position:absolute;
+  inset:0;
+  z-index:10;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background: radial-gradient(900px 500px at 50% 0%, rgba(225,29,72,.25), transparent 60%),
+              rgba(7,10,18,.72);
+  backdrop-filter: blur(10px);
+}
+.loader.show{ display:flex; animation: fadeIn .25s ease; }
+@keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+
+.loaderBox{
+  width:min(420px, 92%);
+  text-align:center;
+  padding:18px 16px;
+  border-radius:22px;
+  border:1px solid rgba(225,29,72,.28);
+  background: rgba(11,16,34,.62);
+  box-shadow: 0 18px 80px rgba(0,0,0,.6);
+  position:relative;
+  overflow:hidden;
+}
+
+/* حلقه سینمایی دور لوگو */
+.ring{
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  margin: 6px auto 10px;
+  position:relative;
+  display:grid;
+  place-items:center;
+}
+.ring:before{
+  content:"";
+  position:absolute;
+  inset:-6px;
+  border-radius:50%;
+  background: conic-gradient(from 0deg, rgba(225,29,72,.0), rgba(225,29,72,.9), rgba(251,113,133,.0));
+  filter: blur(1px);
+  animation: spin 1.2s linear infinite;
+}
+@keyframes spin{ to{ transform: rotate(360deg); } }
+
+.ring:after{
+  content:"";
+  position:absolute;
+  inset:10px;
+  border-radius:50%;
+  background: radial-gradient(circle at 50% 50%, rgba(225,29,72,.10), transparent 55%);
+  border:1px solid rgba(225,29,72,.18);
+}
+
+.loaderLogo{
+  width:86px;
+  height:auto;
+  filter: drop-shadow(0 18px 40px rgba(225,29,72,.45));
+  animation: breathe 1.6s ease-in-out infinite;
+  position:relative;
+  z-index:2;
+}
+@keyframes breathe{
+  0%,100%{ transform: scale(1); opacity: .92; }
+  50%{ transform: scale(1.06); opacity: 1; }
+}
+
+.loaderTitle{
+  font-weight:700;
+  font-size:16px;
+  margin-top:6px;
+}
+.loaderStep{
+  margin-top:6px;
+  color:var(--muted);
+  font-size:13px;
+}
+
+/* نوار کوچک سینمایی */
+.loaderBar{
+  margin:14px auto 2px;
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  overflow:hidden;
+  border:1px solid rgba(27,36,68,.85);
+  background: rgba(7,10,18,.35);
+}
+.loaderBar i{
+  display:block;
+  height:100%;
+  width:0%;
+  background: linear-gradient(90deg, rgba(225,29,72,.0), rgba(225,29,72,.95), rgba(251,113,133,.85), rgba(225,29,72,.0));
+  animation: loaderMove 1.05s ease-in-out infinite;
+}
+@keyframes loaderMove{
+  0%{ transform: translateX(-60%); }
+  100%{ transform: translateX(60%); }
+}
+
+/* جلوه خطوط سینمایی روی لودر */
+.loaderScan{
+  position:absolute;
+  inset:0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,.06),
+    rgba(255,255,255,.06) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+  opacity:.08;
+  mix-blend-mode: overlay;
+  pointer-events:none;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-  <div class="card">
+  <div class="card" id="card">
+
     <div class="noise"></div>
     <div class="scanlines"></div>
+
+    <!-- ✅ Cinematic Loader Overlay -->
+    <div class="loader" id="loader">
+      <div class="loaderBox">
+        <div class="loaderScan"></div>
+        <div class="ring">
+          <img class="loaderLogo" src="logo.png" alt="Game Renter">
+        </div>
+        <div class="loaderTitle">Game Renter</div>
+        <div class="loaderStep" id="loaderText">Connecting...</div>
+        <div class="loaderBar"><i></i></div>
+      </div>
+    </div>
 
     <div class="header">
       <img src="logo.png" alt="Game Renter">
@@ -231,14 +405,184 @@ button{
     </div>
 
     <label>DNS (فقط عدد مثل 1.1.1.1)</label>
-    <input placeholder="مثلاً 8.8.8.8">
+    <div class="inputWrap">
+      <input id="dns" placeholder="مثلاً 8.8.8.8">
+    </div>
 
-    <button>شروع تست</button>
+    <button id="btn">شروع تست</button>
+
+    <div class="progress"><i id="bar"></i></div>
+
+    <div class="steps">
+      <div class="pill" id="s1"><span class="dot"></span>Connecting</div>
+      <div class="pill" id="s2"><span class="dot"></span>Test google.com</div>
+      <div class="pill" id="s3"><span class="dot"></span>Test aparat.com</div>
+      <div class="pill" id="s4"><span class="dot"></span>Done</div>
+    </div>
+
+    <div id="out" class="panel">
+      DNS رو وارد کن و روی «شروع تست» بزن.
+    </div>
 
     <div class="footer">
       هر چی ms کمتر باشه بهتره.
     </div>
   </div>
 </div>
+
+<script>
+const btn = document.getElementById('btn');
+const dns = document.getElementById('dns');
+const bar = document.getElementById('bar');
+const out = document.getElementById('out');
+
+const loader = document.getElementById('loader');
+const loaderText = document.getElementById('loaderText');
+
+const s1 = document.getElementById('s1');
+const s2 = document.getElementById('s2');
+const s3 = document.getElementById('s3');
+const s4 = document.getElementById('s4');
+
+function resetSteps(){ [s1,s2,s3,s4].forEach(x=>x.className='pill'); }
+function stepActive(el){ el.className = 'pill active'; }
+function stepDone(el){ el.className = 'pill done'; }
+function stepFail(el){ el.className = 'pill fail'; }
+
+function isIpLike(v){ return /^[0-9.]+$/.test(v.trim()); }
+
+function fakeProgress(){
+  let p = 6;
+  bar.style.width = '6%';
+  const t = setInterval(()=>{
+    p = Math.min(92, p + Math.random()*10);
+    bar.style.width = Math.floor(p) + '%';
+  }, 220);
+  return ()=>clearInterval(t);
+}
+
+function badgeFor(ms){
+  if (ms <= 80) return { cls:'ok', txt:'FAST' };
+  if (ms <= 200) return { cls:'warn', txt:'OK' };
+  return { cls:'bad', txt:'SLOW' };
+}
+function widthFor(ms){
+  const w = Math.max(20, Math.min(95, 110 - (ms/3)));
+  return Math.floor(w) + '%';
+}
+function miniBarColor(cls){
+  if (cls==='ok') return 'linear-gradient(90deg, var(--ok), rgba(34,197,94,.35))';
+  if (cls==='warn') return 'linear-gradient(90deg, var(--warn), rgba(251,191,36,.35))';
+  return 'linear-gradient(90deg, var(--bad), rgba(239,68,68,.35))';
+}
+
+function renderResults(results){
+  const rows = results.map(r=>{
+    if(!r.ok){
+      return `
+        <div class="row">
+          <div><b>${r.domain}</b></div>
+          <span class="badge bad">FAIL</span>
+        </div>
+      `;
+    }
+    const b = badgeFor(r.ms);
+    return `
+      <div class="row">
+        <div>
+          <b>${r.domain}</b>
+          <div class="miniBar"><i style="width:${widthFor(r.ms)}; background:${miniBarColor(b.cls)}"></i></div>
+        </div>
+        <div style="text-align:left">
+          <div style="font-weight:700">${r.ms}ms</div>
+          <span class="badge ${b.cls}">${b.txt}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  out.innerHTML = `✅ نتیجه تست:<div style="margin-top:10px">${rows}</div>`;
+}
+
+/* Cinematic loader helpers */
+function showLoader(text){
+  loaderText.textContent = text;
+  loader.classList.add('show');
+}
+function setLoaderText(text){
+  loaderText.textContent = text;
+}
+function hideLoader(){
+  loader.classList.remove('show');
+}
+
+btn.onclick = async ()=>{
+  const v = dns.value.trim();
+
+  if(!v || !isIpLike(v)){
+    dns.classList.remove('shake'); void dns.offsetWidth; dns.classList.add('shake');
+    out.className = 'panel';
+    out.innerHTML = '❌ لطفاً DNS رو فقط به صورت عددی وارد کن (مثلاً 1.1.1.1)';
+    return;
+  }
+
+  btn.disabled = true;
+  resetSteps();
+  out.className = 'panel';
+  out.textContent = 'در حال شروع...';
+
+  showLoader('Connecting...');
+  const stop = fakeProgress();
+
+  try{
+    stepActive(s1);
+    await new Promise(r=>setTimeout(r, 320)); // نرم‌تر
+
+    setLoaderText('Resolving google.com...');
+    stepDone(s1);
+    stepActive(s2);
+    await new Promise(r=>setTimeout(r, 320));
+
+    setLoaderText('Resolving aparat.com...');
+    stepDone(s2);
+    stepActive(s3);
+    await new Promise(r=>setTimeout(r, 320));
+
+    const r = await fetch(`/api/test?dns=${encodeURIComponent(v)}`, { cache:'no-store' });
+    const j = await r.json();
+
+    stop();
+    bar.style.width = '100%';
+
+    if(!j.ok){
+      setLoaderText('Failed.');
+      stepFail(s3); stepFail(s4);
+      await new Promise(r=>setTimeout(r, 350));
+      hideLoader();
+      out.innerHTML = '❌ خطا در تست DNS';
+    } else {
+      setLoaderText('Done!');
+      stepDone(s3);
+      stepActive(s4);
+      renderResults(j.results || []);
+      stepDone(s4);
+      await new Promise(r=>setTimeout(r, 380));
+      hideLoader();
+    }
+
+  } catch(e){
+    stop();
+    bar.style.width = '100%';
+    resetSteps();
+    stepFail(s1); stepFail(s2); stepFail(s3); stepFail(s4);
+    setLoaderText('Network Error.');
+    await new Promise(r=>setTimeout(r, 420));
+    hideLoader();
+    out.innerHTML = '❌ ارتباط با سرور برقرار نشد';
+  }
+
+  setTimeout(()=>btn.disabled=false, 450);
+};
+</script>
 </body>
 </html>
