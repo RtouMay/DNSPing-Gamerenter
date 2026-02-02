@@ -1,165 +1,205 @@
-import { Resolver } from "node:dns/promises";
+import dns from "dns";
 
-function normalizeDigits(input) {
-  // تبدیل ارقام فارسی/عربی به انگلیسی + نقطه فارسی
+const { Resolver } = dns.promises;
+
+function json(res, status, data) {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(data));
+}
+
+function normalizeDigits(input){
   const map = {
-    "۰": "0","۱": "1","۲": "2","۳": "3","۴": "4","۵": "5","۶": "6","۷": "7","۸": "8","۹": "9",
-    "٠": "0","١": "1","٢": "2","٣": "3","٤": "4","٥": "5","٦": "6","٧": "7","٨": "8","٩": "9",
-    "٫": ".", "٬": "", "،": ".", " ": ""
+    "۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9",
+    "٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9",
+    "٫":".","٬":"","،":"."," ":""
   };
-  return (input || "").toString().trim().split("").map(ch => map[ch] ?? ch).join("");
+  return (input||"").toString().trim().split("").map(ch => map[ch] ?? ch).join("");
 }
 
-function parseIPv4(ipRaw) {
-  const ip = normalizeDigits(ipRaw);
-  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return null;
-  const parts = ip.split(".").map(Number);
-  if (parts.some(n => n < 0 || n > 255)) return null;
-  return ip;
+function isValidIPv4(ip) {
+  ip = normalizeDigits(ip);
+  if(!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return false;
+  return ip.split(".").every(n => {
+    const x = Number(n);
+    return Number.isFinite(x) && x >= 0 && x <= 255;
+  });
 }
 
-function isPublicIPv4(ip) {
-  const parts = ip.split(".").map(Number);
-  const [a, b] = parts;
-
-  // block private & local ranges (SSRF safety)
-  if (a === 10) return false;
-  if (a === 127) return false;
-  if (a === 0) return false;
-  if (a === 169 && b === 254) return false;
-  if (a === 172 && b >= 16 && b <= 31) return false;
-  if (a === 192 && b === 168) return false;
-
-  return true;
+function isPrivateIPv4(ip) {
+  const [a,b] = ip.split(".").map(Number);
+  if (a === 10) return true;
+  if (a === 127) return true;
+  if (a === 0) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  return false;
 }
 
-function withTimeout(promise, ms) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
-  ]);
-}
-
-async function testDomain(resolver, domain) {
-  const t0 = Date.now();
+async function resolveOnce(resolver, domain) {
+  const start = Date.now();
   try {
-    await withTimeout(resolver.resolve4(domain), 2500);
-    return { domain, ok: true, ms: Date.now() - t0 };
+    // A record is enough for our "works/doesn't work" check
+    await resolver.resolve4(domain);
+    const ms = Date.now() - start;
+    return { domain, ok: true, ms };
   } catch (e) {
-    return { domain, ok: false, error: e?.message || "error" };
+    return { domain, ok: false, ms: null };
   }
 }
 
-function summarize(items) {
-  const oks = items.filter(x => x.ok);
-  const okCount = oks.length;
-  const total = items.length;
-  const threshold = Math.ceil(total / 2); // majority (برای 2 => 1 هم قبول)
-
-  const avgMs = okCount
-    ? Math.round(oks.reduce((a, b) => a + (b.ms || 0), 0) / okCount)
-    : null;
-
-  const status = okCount >= threshold ? "ok" : "fail";
-  return { okCount, total, avgMs, status };
+function avgMs(items) {
+  const ok = items.filter(x => x.ok && typeof x.ms === "number");
+  if (!ok.length) return null;
+  const sum = ok.reduce((a,b)=>a+b.ms,0);
+  return Math.round(sum / ok.length);
 }
 
-async function runForDns(dnsIp, groupsDef) {
-  const resolver = new Resolver();
-  resolver.setServers([dnsIp]);
-
-  const groups = [];
-  for (const g of groupsDef) {
-    const items = [];
-    for (const d of g.domains) {
-      items.push(await testDomain(resolver, d));
-    }
-    const s = summarize(items);
-    groups.push({
-      key: g.key,
-      title: g.title,
-      icon: g.icon,
-      status: s.status,
-      okCount: s.okCount,
-      total: s.total,
-      avgMs: s.avgMs,
-      items,
-    });
-  }
-
-  return { ip: dnsIp, groups };
+function groupStatus(items){
+  const okCount = items.filter(x=>x.ok).length;
+  if(okCount === 0) return "fail";
+  return "ok";
 }
+
+const GROUPS = [
+  {
+    key: "xbox",
+    title: "سرورهای Xbox",
+    domains: [
+      "xbox.com",
+      "xboxlive.com",
+      "login.live.com",
+      "account.microsoft.com",
+      "storeedgefd.dsx.mp.microsoft.com",
+      "xsts.auth.xboxlive.com"
+    ],
+  },
+  {
+    key: "playstation",
+    title: "سرورهای PlayStation",
+    domains: [
+      "playstation.com",
+      "store.playstation.com",
+      "id.sonyentertainmentnetwork.com",
+      "auth.api.sonyentertainmentnetwork.com",
+      "image.api.playstation.com"
+    ],
+  },
+  {
+    key: "games",
+    title: "سرور بازی‌های پرطرفدار",
+    domains: [
+      // EA / FC / Battlefield / Apex
+      "ea.com",
+      "help.ea.com",
+      "easports.com",
+      "origin.com",
+      "apexlegends.com",
+      "battlefield.com",
+
+      // Call of Duty / Activision / Battle.net
+      "callofduty.com",
+      "activision.com",
+      "battle.net",
+
+      // Epic / Fortnite
+      "epicgames.com",
+      "fortnite.com",
+
+      // Riot / Valorant / LoL
+      "riotgames.com",
+      "playvalorant.com",
+      "leagueoflegends.com",
+
+      // Steam
+      "steampowered.com",
+      "steamcommunity.com",
+
+      // Ubisoft / Rainbow Six
+      "ubisoft.com",
+      "rainbow6.com",
+    ],
+  },
+  {
+    key: "international",
+    title: "سرورهای بین‌المللی",
+    domains: [
+      "google.com",
+      "cloudflare.com",
+      "github.com",
+      "microsoft.com",
+      "amazon.com",
+    ],
+  },
+  {
+    key: "internal",
+    title: "سرورهای داخلی",
+    domains: [
+      "aparat.com",
+      "digikala.com",
+      "divar.ir",
+      "rubika.ir",
+    ],
+  },
+];
 
 export default async function handler(req, res) {
   try {
-    const primaryRaw = req.query.primary || req.query.dns || "";
-    const secondaryRaw = req.query.secondary || "";
+    const u = new URL(req.url, "http://localhost");
+    const primary = normalizeDigits(u.searchParams.get("primary") || "");
+    const secondary = normalizeDigits(u.searchParams.get("secondary") || "");
 
-    const primary = parseIPv4(primaryRaw);
-    const secondary = secondaryRaw ? parseIPv4(secondaryRaw) : null;
-
-    if (!primary) {
-      return res.status(400).json({ ok: false, error: "invalid_primary" });
+    if (!primary || !isValidIPv4(primary)) {
+      return json(res, 400, { ok:false, error:"invalid_primary" });
     }
-    if (!isPublicIPv4(primary)) {
-      return res.status(400).json({ ok: false, error: "private_primary" });
+    if (isPrivateIPv4(primary)) {
+      return json(res, 400, { ok:false, error:"private_primary" });
     }
-    if (secondary && !isPublicIPv4(secondary)) {
-      return res.status(400).json({ ok: false, error: "private_secondary" });
-    }
-    if (secondary && secondary === primary) {
-      return res.status(400).json({ ok: false, error: "same_dns" });
+    if (secondary) {
+      if (!isValidIPv4(secondary)) return json(res, 400, { ok:false, error:"invalid_secondary" });
+      if (isPrivateIPv4(secondary)) return json(res, 400, { ok:false, error:"private_secondary" });
+      if (secondary === primary) return json(res, 400, { ok:false, error:"same_dns" });
     }
 
-    const groupsDef = [
-      {
-        key: "xbox",
-        title: "سرورهای Xbox",
-        icon: "🎮",
-        domains: ["xboxlive.com", "xsts.auth.xboxlive.com", "title.mgt.xboxlive.com"],
-      },
-      {
-        key: "playstation",
-        title: "سرورهای PlayStation",
-        icon: "🎮",
-        domains: ["playstation.com", "playstation.net", "auth.api.sonyentertainmentnetwork.com"],
-      },
-      {
-        key: "games",
-        title: "سرور بازی‌های پرطرفدار",
-        icon: "🔥",
-        domains: [
-          "ea.com",
-          "accounts.ea.com",
-          "easports.com",
-          "callofduty.com",
-          "demonware.net"
-        ],
-      },
-      {
-        key: "international",
-        title: "سرورهای بین‌المللی",
-        icon: "🌍",
-        domains: ["google.com", "cloudflare.com", "github.com"],
-      },
-      {
-        key: "internal",
-        title: "سرورهای داخلی",
-        icon: "🇮🇷",
-        domains: ["aparat.com", "digikala.com"],
-      },
-    ];
+    async function runForDns(serverIp) {
+      const resolver = new Resolver();
+      resolver.setServers([serverIp]);
 
-    const out = { ok: true, results: {} };
+      const groups = [];
+      for (const g of GROUPS) {
+        const items = [];
+        for (const d of g.domains) {
+          items.push(await resolveOnce(resolver, d));
+        }
+        const okCount = items.filter(x=>x.ok).length;
+        const total = items.length;
+        const avg = avgMs(items);
+        const status = groupStatus(items);
 
-    out.results.primary = await runForDns(primary, groupsDef);
+        groups.push({
+          key: g.key,
+          title: g.title,
+          total,
+          okCount,
+          avgMs: avg,
+          status,
+          items
+        });
+      }
+      return { groups };
+    }
+
+    const primaryResult = await runForDns(primary);
+    const out = { ok:true, results: { primary: primaryResult } };
 
     if (secondary) {
-      out.results.secondary = await runForDns(secondary, groupsDef);
+      const secondaryResult = await runForDns(secondary);
+      out.results.secondary = secondaryResult;
     }
 
-    return res.status(200).json(out);
+    return json(res, 200, out);
+
   } catch (e) {
-    return res.status(200).json({ ok: false, error: "server_error", message: e?.message || "error" });
+    return json(res, 500, { ok:false, error:"server_error" });
   }
 }
