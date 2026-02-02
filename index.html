@@ -6,7 +6,6 @@
 <title>Game Renter | DNS Test</title>
 
 <style>
-/* ================= FONT ================= */
 @font-face{
   font-family: "YekanBakh";
   src: url("YekanBakh-Regular.ttf") format("truetype");
@@ -22,11 +21,8 @@
   font-display: swap;
 }
 
-/* ================= THEME ================= */
 :root{
   --bg:#070a12;
-  --card:#0e1427;
-  --card2:#0b1022;
   --border:#1b2444;
   --text:#e5e7eb;
   --muted:#9ca3af;
@@ -35,9 +31,11 @@
   --ok:#22c55e;
   --warn:#fbbf24;
   --bad:#ef4444;
+  --panel:#0b1022;
 }
 
 *{ box-sizing:border-box; font-family:"YekanBakh", system-ui, sans-serif; }
+
 body{
   margin:0;
   color:var(--text);
@@ -52,7 +50,7 @@ body{
 
 .card{
   width:100%;
-  max-width:560px;
+  max-width:640px;
   border-radius:26px;
   background:linear-gradient(180deg, rgba(18,24,43,.9), rgba(14,20,39,.9));
   border:1px solid rgba(27,36,68,.9);
@@ -65,6 +63,7 @@ body{
   position:relative;
   overflow:hidden;
 }
+
 @keyframes in{ from{opacity:0; transform:translateY(14px) scale(.99)} to{opacity:1; transform:translateY(0) scale(1)} }
 
 .card:before{
@@ -93,9 +92,8 @@ body{
   50%{transform:translate3d(2%,1%,0) scale(1.04)}
   100%{transform:translate3d(-2%,-2%,0) scale(1)}
 }
-.card .noise, .card .scanlines{
-  position:absolute; inset:0; pointer-events:none; z-index:1;
-}
+
+.card .noise, .card .scanlines{ position:absolute; inset:0; pointer-events:none; z-index:1; }
 .card .scanlines{
   background: repeating-linear-gradient(
     to bottom,
@@ -121,8 +119,8 @@ body{
   100%{ transform: translate(0,0); }
 }
 
-/* content z-index */
-.header, label, .inputWrap, button, .progress, .steps, .panel, .footer{ position:relative; z-index:2; }
+/* keep content above effects */
+.header, label, .inputWrap, button, .progress, .grid, .footer{ position:relative; z-index:2; }
 
 .header{ display:flex; align-items:center; gap:14px; margin-bottom:18px; }
 .header img{
@@ -136,8 +134,8 @@ body{
   0%,100%{ transform: translateY(0) scale(1); }
   50%{ transform: translateY(-6px) scale(1.03); }
 }
-.header .title{ margin:0; font-size:20px; letter-spacing:.2px; font-weight:700; }
-.header .sub{ color:var(--muted); font-size:13px; margin-top:4px; }
+.title{ margin:0; font-size:20px; font-weight:700; letter-spacing:.2px; }
+.sub{ color:var(--muted); font-size:13px; margin-top:4px; }
 
 label{ display:block; color:var(--muted); font-size:14px; margin:12px 0 8px; }
 .inputWrap{ position:relative; }
@@ -154,7 +152,6 @@ input{
   transition:.25s;
 }
 input:focus{ border-color:rgba(225,29,72,.9); box-shadow:0 0 0 4px rgba(225,29,72,.18); }
-
 .shake{ animation:shake .35s ease; }
 @keyframes shake{
   0%{transform:translateX(0)} 25%{transform:translateX(-6px)}
@@ -195,67 +192,138 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   transition:width .35s cubic-bezier(.2,.8,.2,1);
 }
 
-.steps{ margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; }
-.pill{
-  display:inline-flex; align-items:center; gap:8px;
-  padding:8px 10px; border-radius:999px;
-  background:rgba(11,16,34,.9);
+/* 4 cards grid */
+.grid{
+  margin-top:18px;
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:12px;
+}
+@media (max-width: 560px){
+  .grid{ grid-template-columns: 1fr; }
+}
+
+.box{
+  background: rgba(11,16,34,.9);
   border:1px solid rgba(27,36,68,.95);
-  color:var(--muted);
-  font-size:13px;
+  border-radius:18px;
+  padding:14px;
+  transition:.25s;
+  overflow:hidden;
+}
+.boxHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.boxTitle{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:700;
+}
+.icon{
+  width:34px; height:34px;
+  display:grid; place-items:center;
+  border-radius:12px;
+  border:1px solid rgba(27,36,68,.85);
+  background: rgba(7,10,18,.35);
+}
+
+.state{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  color: var(--muted);
+}
+.light{
+  width:10px; height:10px; border-radius:50%;
+  background: rgba(156,163,175,.45);
+  box-shadow: 0 0 0 0 rgba(225,29,72,0);
   transition:.25s;
 }
-.dot{ width:8px; height:8px; border-radius:50%; background:rgba(156,163,175,.55); }
-.pill.active{ color:var(--text); border-color:rgba(225,29,72,.55); box-shadow:0 0 0 3px rgba(225,29,72,.12); }
-.pill.active .dot{ background:linear-gradient(180deg, var(--red), var(--red2)); box-shadow:0 0 16px rgba(225,29,72,.6); }
-.pill.done{ color:var(--text); border-color:rgba(34,197,94,.55); }
-.pill.done .dot{ background:var(--ok); box-shadow:0 0 16px rgba(34,197,94,.45); }
-.pill.fail{ color:var(--text); border-color:rgba(239,68,68,.55); }
-.pill.fail .dot{ background:var(--bad); box-shadow:0 0 16px rgba(239,68,68,.45); }
 
-.panel{
-  margin-top:18px;
-  padding:16px;
-  border-radius:18px;
-  background:rgba(11,16,34,.9);
-  border:1px dashed rgba(27,36,68,.95);
-  animation:pop .35s ease;
+.box.ok{
+  border-color: rgba(34,197,94,.55);
+  box-shadow: 0 0 0 3px rgba(34,197,94,.10);
 }
-@keyframes pop{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
+.box.ok .light{
+  background: var(--ok);
+  box-shadow: 0 0 18px rgba(34,197,94,.55);
+}
+.box.fail{
+  border-color: rgba(239,68,68,.55);
+  box-shadow: 0 0 0 3px rgba(239,68,68,.10);
+}
+.box.fail .light{
+  background: var(--bad);
+  box-shadow: 0 0 18px rgba(239,68,68,.55);
+}
+.box.testing{
+  border-color: rgba(225,29,72,.35);
+  box-shadow: 0 0 0 3px rgba(225,29,72,.08);
+}
+.box.testing .light{
+  background: linear-gradient(180deg, var(--red), var(--red2));
+  box-shadow: 0 0 18px rgba(225,29,72,.45);
+  animation: blink 1s ease-in-out infinite;
+}
+@keyframes blink{
+  0%,100%{ opacity:.55; transform:scale(.92); }
+  50%{ opacity:1; transform:scale(1); }
+}
 
-.row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid rgba(27,36,68,.55); }
-.row:last-child{ border-bottom:none }
-
-.badge{
+.meta{
+  margin-top:10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color: var(--muted);
   font-size:12px;
-  padding:4px 10px;
+}
+.kpi{
+  font-weight:700;
+  color: var(--text);
+}
+
+.details{
+  margin-top:10px;
+  border-top:1px solid rgba(27,36,68,.55);
+  padding-top:10px;
+  display:none;
+  font-size:12px;
+  color: var(--muted);
+}
+.box.showDetails .details{ display:block; }
+
+.item{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:6px 0;
+}
+.item b{ color: var(--text); font-weight:700; }
+.tag{
+  font-size:11px;
+  padding:3px 8px;
   border-radius:999px;
-  border:1px solid rgba(27,36,68,.95);
+  border:1px solid rgba(27,36,68,.8);
+  background: rgba(7,10,18,.35);
+}
+.tag.ok{ border-color: rgba(34,197,94,.55); color:#d1fae5; }
+.tag.fail{ border-color: rgba(239,68,68,.55); color:#fee2e2; }
+
+.footer{
+  margin-top:14px;
+  text-align:center;
   color:var(--muted);
-  background:rgba(7,10,18,.35);
-}
-.badge.ok{ color:#d1fae5; border-color:rgba(34,197,94,.55) }
-.badge.warn{ color:#fff7ed; border-color:rgba(251,191,36,.55) }
-.badge.bad{ color:#fee2e2; border-color:rgba(239,68,68,.55) }
-
-.miniBar{
-  margin-top:8px;
-  height:8px;
-  border-radius:999px;
-  overflow:hidden;
-  background:rgba(7,10,18,.35);
-  border:1px solid rgba(27,36,68,.55);
-}
-.miniBar i{
-  display:block;
-  height:100%;
-  width:0%;
-  transition:width .45s cubic-bezier(.2,.8,.2,1);
+  font-size:12px;
+  line-height:1.9;
 }
 
-.footer{ margin-top:14px; text-align:center; color:var(--muted); font-size:12px; line-height:1.8; }
-
-/* ================= CINEMATIC LOADER ================= */
+/* cinematic loader overlay */
 .loader{
   position:absolute;
   inset:0;
@@ -281,8 +349,20 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   position:relative;
   overflow:hidden;
 }
-
-/* حلقه سینمایی دور لوگو */
+.loaderScan{
+  position:absolute;
+  inset:0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,.06),
+    rgba(255,255,255,.06) 1px,
+    transparent 1px,
+    transparent 7px
+  );
+  opacity:.08;
+  mix-blend-mode: overlay;
+  pointer-events:none;
+}
 .ring{
   width:140px;
   height:140px;
@@ -302,7 +382,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   animation: spin 1.2s linear infinite;
 }
 @keyframes spin{ to{ transform: rotate(360deg); } }
-
 .ring:after{
   content:"";
   position:absolute;
@@ -311,7 +390,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   background: radial-gradient(circle at 50% 50%, rgba(225,29,72,.10), transparent 55%);
   border:1px solid rgba(225,29,72,.18);
 }
-
 .loaderLogo{
   width:86px;
   height:auto;
@@ -324,19 +402,8 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   0%,100%{ transform: scale(1); opacity: .92; }
   50%{ transform: scale(1.06); opacity: 1; }
 }
-
-.loaderTitle{
-  font-weight:700;
-  font-size:16px;
-  margin-top:6px;
-}
-.loaderStep{
-  margin-top:6px;
-  color:var(--muted);
-  font-size:13px;
-}
-
-/* نوار کوچک سینمایی */
+.loaderTitle{ font-weight:700; font-size:16px; margin-top:6px; }
+.loaderStep{ margin-top:6px; color:var(--muted); font-size:13px; }
 .loaderBar{
   margin:14px auto 2px;
   width: 100%;
@@ -357,22 +424,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   0%{ transform: translateX(-60%); }
   100%{ transform: translateX(60%); }
 }
-
-/* جلوه خطوط سینمایی روی لودر */
-.loaderScan{
-  position:absolute;
-  inset:0;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255,255,255,.06),
-    rgba(255,255,255,.06) 1px,
-    transparent 1px,
-    transparent 7px
-  );
-  opacity:.08;
-  mix-blend-mode: overlay;
-  pointer-events:none;
-}
 </style>
 </head>
 
@@ -383,7 +434,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     <div class="noise"></div>
     <div class="scanlines"></div>
 
-    <!-- ✅ Cinematic Loader Overlay -->
     <div class="loader" id="loader">
       <div class="loaderBox">
         <div class="loaderScan"></div>
@@ -400,7 +450,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       <img src="logo.png" alt="Game Renter">
       <div>
         <h1 class="title">Game Renter</h1>
-        <div class="sub">تست DNS گیم‌رنتر</div>
+        <div class="sub">تست DNS برای Xbox / PlayStation + داخلی/بین‌المللی</div>
       </div>
     </div>
 
@@ -413,20 +463,62 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 
     <div class="progress"><i id="bar"></i></div>
 
-    <div class="steps">
-      <div class="pill" id="s1"><span class="dot"></span>Connecting</div>
-      <div class="pill" id="s2"><span class="dot"></span>Test google.com</div>
-      <div class="pill" id="s3"><span class="dot"></span>Test aparat.com</div>
-      <div class="pill" id="s4"><span class="dot"></span>Done</div>
-    </div>
+    <!-- 4 boxes -->
+    <div class="grid" id="grid">
+      <div class="box testing" id="box-xbox">
+        <div class="boxHead">
+          <div class="boxTitle"><span class="icon">🎮</span> سرورهای Xbox</div>
+          <div class="state"><span class="light"></span><span id="txt-xbox">آماده تست</span></div>
+        </div>
+        <div class="meta">
+          <div>موفق: <span class="kpi" id="kpi-xbox">-</span></div>
+          <div>میانگین: <span class="kpi" id="avg-xbox">-</span></div>
+        </div>
+        <div class="details" id="det-xbox"></div>
+      </div>
 
-    <div id="out" class="panel">
-      DNS رو وارد کن و روی «شروع تست» بزن.
+      <div class="box testing" id="box-playstation">
+        <div class="boxHead">
+          <div class="boxTitle"><span class="icon">🎮</span> سرورهای PlayStation</div>
+          <div class="state"><span class="light"></span><span id="txt-playstation">آماده تست</span></div>
+        </div>
+        <div class="meta">
+          <div>موفق: <span class="kpi" id="kpi-playstation">-</span></div>
+          <div>میانگین: <span class="kpi" id="avg-playstation">-</span></div>
+        </div>
+        <div class="details" id="det-playstation"></div>
+      </div>
+
+      <div class="box testing" id="box-international">
+        <div class="boxHead">
+          <div class="boxTitle"><span class="icon">🌍</span> سرورهای بین‌المللی</div>
+          <div class="state"><span class="light"></span><span id="txt-international">آماده تست</span></div>
+        </div>
+        <div class="meta">
+          <div>موفق: <span class="kpi" id="kpi-international">-</span></div>
+          <div>میانگین: <span class="kpi" id="avg-international">-</span></div>
+        </div>
+        <div class="details" id="det-international"></div>
+      </div>
+
+      <div class="box testing" id="box-internal">
+        <div class="boxHead">
+          <div class="boxTitle"><span class="icon">🇮🇷</span> سرورهای داخلی</div>
+          <div class="state"><span class="light"></span><span id="txt-internal">آماده تست</span></div>
+        </div>
+        <div class="meta">
+          <div>موفق: <span class="kpi" id="kpi-internal">-</span></div>
+          <div>میانگین: <span class="kpi" id="avg-internal">-</span></div>
+        </div>
+        <div class="details" id="det-internal"></div>
+      </div>
     </div>
 
     <div class="footer">
-      هر چی ms کمتر باشه بهتره.
+      نکته: این تست فقط بررسی می‌کند DNS بتواند دامنه‌های کلیدی هر سرویس را Resolve کند.
+      نتیجه نهایی ممکن است به ISP/منطقه هم وابسته باشد.
     </div>
+
   </div>
 </div>
 
@@ -434,20 +526,11 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 const btn = document.getElementById('btn');
 const dns = document.getElementById('dns');
 const bar = document.getElementById('bar');
-const out = document.getElementById('out');
 
 const loader = document.getElementById('loader');
 const loaderText = document.getElementById('loaderText');
 
-const s1 = document.getElementById('s1');
-const s2 = document.getElementById('s2');
-const s3 = document.getElementById('s3');
-const s4 = document.getElementById('s4');
-
-function resetSteps(){ [s1,s2,s3,s4].forEach(x=>x.className='pill'); }
-function stepActive(el){ el.className = 'pill active'; }
-function stepDone(el){ el.className = 'pill done'; }
-function stepFail(el){ el.className = 'pill fail'; }
+const groupKeys = ["xbox","playstation","international","internal"];
 
 function isIpLike(v){ return /^[0-9.]+$/.test(v.trim()); }
 
@@ -461,59 +544,46 @@ function fakeProgress(){
   return ()=>clearInterval(t);
 }
 
-function badgeFor(ms){
-  if (ms <= 80) return { cls:'ok', txt:'FAST' };
-  if (ms <= 200) return { cls:'warn', txt:'OK' };
-  return { cls:'bad', txt:'SLOW' };
-}
-function widthFor(ms){
-  const w = Math.max(20, Math.min(95, 110 - (ms/3)));
-  return Math.floor(w) + '%';
-}
-function miniBarColor(cls){
-  if (cls==='ok') return 'linear-gradient(90deg, var(--ok), rgba(34,197,94,.35))';
-  if (cls==='warn') return 'linear-gradient(90deg, var(--warn), rgba(251,191,36,.35))';
-  return 'linear-gradient(90deg, var(--bad), rgba(239,68,68,.35))';
-}
-
-function renderResults(results){
-  const rows = results.map(r=>{
-    if(!r.ok){
-      return `
-        <div class="row">
-          <div><b>${r.domain}</b></div>
-          <span class="badge bad">FAIL</span>
-        </div>
-      `;
-    }
-    const b = badgeFor(r.ms);
-    return `
-      <div class="row">
-        <div>
-          <b>${r.domain}</b>
-          <div class="miniBar"><i style="width:${widthFor(r.ms)}; background:${miniBarColor(b.cls)}"></i></div>
-        </div>
-        <div style="text-align:left">
-          <div style="font-weight:700">${r.ms}ms</div>
-          <span class="badge ${b.cls}">${b.txt}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  out.innerHTML = `✅ نتیجه تست:<div style="margin-top:10px">${rows}</div>`;
-}
-
-/* Cinematic loader helpers */
 function showLoader(text){
   loaderText.textContent = text;
   loader.classList.add('show');
 }
-function setLoaderText(text){
-  loaderText.textContent = text;
+function setLoaderText(text){ loaderText.textContent = text; }
+function hideLoader(){ loader.classList.remove('show'); }
+
+function setTestingUI(){
+  bar.style.width = "0%";
+  groupKeys.forEach(k=>{
+    const box = document.getElementById(`box-${k}`);
+    box.classList.remove("ok","fail","showDetails");
+    box.classList.add("testing");
+    document.getElementById(`txt-${k}`).textContent = "در حال تست...";
+    document.getElementById(`kpi-${k}`).textContent = "-";
+    document.getElementById(`avg-${k}`).textContent = "-";
+    document.getElementById(`det-${k}`).innerHTML = "";
+  });
 }
-function hideLoader(){
-  loader.classList.remove('show');
+
+function renderGroup(g){
+  const box = document.getElementById(`box-${g.key}`);
+  const txt = document.getElementById(`txt-${g.key}`);
+  const kpi = document.getElementById(`kpi-${g.key}`);
+  const avg = document.getElementById(`avg-${g.key}`);
+  const det = document.getElementById(`det-${g.key}`);
+
+  box.classList.remove("testing");
+  box.classList.add(g.status === "ok" ? "ok" : "fail");
+  box.classList.add("showDetails");
+
+  txt.textContent = (g.status === "ok") ? "کار می‌کند" : "کار نمی‌کند";
+  kpi.textContent = `${g.okCount}/${g.total}`;
+  avg.textContent = (g.avgMs == null) ? "-" : `${g.avgMs}ms`;
+
+  det.innerHTML = g.items.map(it=>{
+    const tagCls = it.ok ? "ok" : "fail";
+    const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
+    return `<div class="item"><div><b>${it.domain}</b></div><span class="tag ${tagCls}">${tagTxt}</span></div>`;
+  }).join("");
 }
 
 btn.onclick = async ()=>{
@@ -521,32 +591,24 @@ btn.onclick = async ()=>{
 
   if(!v || !isIpLike(v)){
     dns.classList.remove('shake'); void dns.offsetWidth; dns.classList.add('shake');
-    out.className = 'panel';
-    out.innerHTML = '❌ لطفاً DNS رو فقط به صورت عددی وارد کن (مثلاً 1.1.1.1)';
     return;
   }
 
   btn.disabled = true;
-  resetSteps();
-  out.className = 'panel';
-  out.textContent = 'در حال شروع...';
-
-  showLoader('Connecting...');
+  setTestingUI();
+  showLoader("Connecting...");
   const stop = fakeProgress();
 
   try{
-    stepActive(s1);
-    await new Promise(r=>setTimeout(r, 320)); // نرم‌تر
-
-    setLoaderText('Resolving google.com...');
-    stepDone(s1);
-    stepActive(s2);
-    await new Promise(r=>setTimeout(r, 320));
-
-    setLoaderText('Resolving aparat.com...');
-    stepDone(s2);
-    stepActive(s3);
-    await new Promise(r=>setTimeout(r, 320));
+    // cinematic step texts (نمایشی)
+    await new Promise(r=>setTimeout(r, 260));
+    setLoaderText("Testing Xbox servers...");
+    await new Promise(r=>setTimeout(r, 260));
+    setLoaderText("Testing PlayStation servers...");
+    await new Promise(r=>setTimeout(r, 260));
+    setLoaderText("Testing International servers...");
+    await new Promise(r=>setTimeout(r, 260));
+    setLoaderText("Testing Iran servers...");
 
     const r = await fetch(`/api/test?dns=${encodeURIComponent(v)}`, { cache:'no-store' });
     const j = await r.json();
@@ -555,30 +617,35 @@ btn.onclick = async ()=>{
     bar.style.width = '100%';
 
     if(!j.ok){
-      setLoaderText('Failed.');
-      stepFail(s3); stepFail(s4);
+      setLoaderText("Failed.");
       await new Promise(r=>setTimeout(r, 350));
       hideLoader();
-      out.innerHTML = '❌ خطا در تست DNS';
-    } else {
-      setLoaderText('Done!');
-      stepDone(s3);
-      stepActive(s4);
-      renderResults(j.results || []);
-      stepDone(s4);
-      await new Promise(r=>setTimeout(r, 380));
-      hideLoader();
+      alert("خطا در تست DNS");
+      btn.disabled = false;
+      return;
     }
+
+    // render in order with small delays for smooth animation
+    const map = Object.fromEntries((j.groups || []).map(g=>[g.key, g]));
+    const order = ["xbox","playstation","international","internal"];
+
+    for (const key of order){
+      const g = map[key];
+      if (g) renderGroup(g);
+      await new Promise(r=>setTimeout(r, 160));
+    }
+
+    setLoaderText("Done!");
+    await new Promise(r=>setTimeout(r, 300));
+    hideLoader();
 
   } catch(e){
     stop();
     bar.style.width = '100%';
-    resetSteps();
-    stepFail(s1); stepFail(s2); stepFail(s3); stepFail(s4);
-    setLoaderText('Network Error.');
+    setLoaderText("Network Error.");
     await new Promise(r=>setTimeout(r, 420));
     hideLoader();
-    out.innerHTML = '❌ ارتباط با سرور برقرار نشد';
+    alert("ارتباط با سرور برقرار نشد");
   }
 
   setTimeout(()=>btn.disabled=false, 450);
