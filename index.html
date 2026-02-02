@@ -49,7 +49,7 @@ body{
 
 .card{
   width:100%;
-  max-width:720px;
+  max-width:760px;
   border-radius:26px;
   background:linear-gradient(180deg, rgba(18,24,43,.9), rgba(14,20,39,.9));
   border:1px solid rgba(27,36,68,.9);
@@ -133,13 +133,12 @@ body{
   gap:14px;
 }
 .brand img{
-  width:120px; /* بزرگ‌تر */
+  width:132px; /* بزرگ‌تر */
   height:auto;
   filter:drop-shadow(0 14px 30px rgba(225,29,72,.38));
-  /* انیمیشن حذف شد */
 }
 .title{ margin:0; font-size:22px; font-weight:700; letter-spacing:.2px; }
-.sub{ color:var(--muted); font-size:13px; margin-top:4px; }
+.sub{ color:var(--muted); font-size:13px; margin-top:4px; line-height:1.8; }
 
 label{ display:block; color:var(--muted); font-size:14px; margin:10px 0 8px; }
 
@@ -148,7 +147,7 @@ label{ display:block; color:var(--muted); font-size:14px; margin:10px 0 8px; }
   grid-template-columns: 1fr 1fr;
   gap:12px;
 }
-@media (max-width: 620px){
+@media (max-width: 640px){
   .inputs{ grid-template-columns: 1fr; }
 }
 
@@ -170,7 +169,7 @@ input:focus{ border-color:rgba(225,29,72,.9); box-shadow:0 0 0 4px rgba(225,29,7
   margin-top:8px;
   color: var(--muted);
   font-size:12px;
-  line-height: 1.8;
+  line-height: 1.9;
 }
 
 button{
@@ -216,6 +215,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   color:#fee2e2;
   font-size:13px;
   display:none;
+  line-height:1.9;
 }
 .errorBox.show{ display:block; }
 
@@ -226,7 +226,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap:12px;
 }
-@media (max-width: 620px){
+@media (max-width: 640px){
   .grid{ grid-template-columns: 1fr; }
 }
 
@@ -272,11 +272,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   transition:.25s;
 }
 
-.badges{
-  display:flex;
-  gap:8px;
-  align-items:center;
-}
+.badges{ display:flex; gap:8px; align-items:center; }
 .pill{
   font-size:11px;
   padding:3px 8px;
@@ -316,9 +312,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   padding:6px 8px;
   border-radius:10px;
 }
-.toggleBtn:hover{
-  background: rgba(225,29,72,.10);
-}
+.toggleBtn:hover{ background: rgba(225,29,72,.10); }
 
 .details{
   margin-top:10px;
@@ -327,11 +321,59 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   display:none;
   color: var(--muted);
   font-size:12px;
-  line-height:1.8;
+  line-height:1.9;
 }
 .box.expanded .details{ display:block; }
 
-/* cinematic loader overlay (gif) */
+/* domain list inside details */
+.dBlock{
+  margin-top:10px;
+  padding:10px 10px;
+  border-radius:14px;
+  border:1px solid rgba(27,36,68,.65);
+  background: rgba(7,10,18,.22);
+}
+.dTitle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  font-weight:700;
+  color: var(--text);
+  margin-bottom:8px;
+}
+.dMeta{ color: var(--muted); font-weight:400; font-size:11px; }
+
+.dItem{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:6px 0;
+  border-bottom:1px solid rgba(27,36,68,.35);
+}
+.dItem:last-child{ border-bottom:none; }
+
+.domain{
+  direction:ltr;
+  text-align:left;
+  font-weight:700;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size:12px;
+}
+.dTag{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:999px;
+  border:1px solid rgba(27,36,68,.8);
+  background: rgba(7,10,18,.35);
+  color: var(--muted);
+}
+.dTag.ok{ border-color: rgba(34,197,94,.55); color:#d1fae5; }
+.dTag.fail{ border-color: rgba(239,68,68,.55); color:#fee2e2; }
+
+/* loader (CSS spinner like your gif) */
 .loader{
   position:absolute;
   inset:0;
@@ -356,15 +398,48 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   position:relative;
   overflow:hidden;
 }
-.loaderGif{
-  width: 200px;
-  height:auto;
-  display:block;
+
+.spinner{
+  width:120px;
+  height:120px;
   margin: 6px auto 10px;
-  opacity: .95;
+  position:relative;
+  display:grid;
+  place-items:center;
+  filter: drop-shadow(0 18px 40px rgba(225,29,72,.30));
 }
+.spinner:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:
+    conic-gradient(from 210deg,
+      rgba(225,29,72,0) 0deg,
+      rgba(225,29,72,0) 210deg,
+      rgba(225,29,72,1) 270deg,
+      rgba(251,113,133,1) 310deg,
+      rgba(225,29,72,0) 360deg
+    );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 0);
+  opacity:.95;
+  animation: spin 1.0s linear infinite;
+}
+.spinner:after{
+  content:"";
+  position:absolute;
+  inset:14px;
+  border-radius:50%;
+  background: rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow: 0 0 0 1px rgba(225,29,72,.10) inset;
+}
+
+@keyframes spin{ to{ transform: rotate(360deg); } }
+
 .loaderTitle{ font-weight:700; font-size:16px; margin-top:4px; }
-.loaderStep{ margin-top:6px; color:var(--muted); font-size:13px; }
+.loaderStep{ margin-top:6px; color:var(--muted); font-size:13px; line-height:1.8; }
 
 .footer{
   margin-top:12px;
@@ -385,9 +460,9 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 
     <div class="loader" id="loader">
       <div class="loaderBox">
-        <img class="loaderGif" src="loader.gif" alt="loading">
+        <div class="spinner" aria-hidden="true"></div>
         <div class="loaderTitle">Game Renter</div>
-        <div class="loaderStep" id="loaderText">در حال آماده‌سازی...</div>
+        <div class="loaderStep" id="loaderText">در حال آماده‌سازی هستیم…</div>
       </div>
     </div>
 
@@ -401,7 +476,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       </div>
     </div>
 
-    <label>DNS ها رو وارد کن (یکی هم کافیه)</label>
+    <label>DNS را وارد کنید (وارد کردن DNS دوم اختیاری است)</label>
     <div class="inputs">
       <div class="inputWrap">
         <input id="primary" placeholder="DNS پرایمری (مثلاً 8.8.8.8 یا ۸.۸.۸.۸)">
@@ -411,7 +486,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       </div>
     </div>
     <div class="helper">
-      اگر فقط یکی وارد کنی هم تست می‌گیریم. اگر دوتا وارد کنی، هر دوتاش رو جدا تست می‌کنیم.
+      اگر فقط یکی وارد شود، همان تست می‌شود. اگر هر دو وارد شوند، هر دو DNS به‌صورت جداگانه بررسی می‌شوند.
     </div>
 
     <button id="btn">شروع تست</button>
@@ -420,13 +495,11 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 
     <div class="errorBox" id="err"></div>
 
-    <div class="grid" id="grid">
-      <!-- cards injected by JS -->
-    </div>
+    <div class="grid" id="grid"></div>
 
     <div class="footer">
-      این تست فقط بررسی می‌کنه DNS بتونه دامنه‌های کلیدی هر سرویس رو Resolve کنه.
-      نتیجه نهایی ممکنه به ISP/منطقه هم بستگی داشته باشه.
+      این تست فقط بررسی می‌کند DNS بتواند دامنه‌های کلیدی هر سرویس را Resolve کند.
+      نتیجه نهایی ممکن است به ISP/منطقه هم وابسته باشد.
     </div>
 
   </div>
@@ -453,7 +526,6 @@ function normalizeDigits(input){
   };
   return (input||"").toString().trim().split("").map(ch => map[ch] ?? ch).join("");
 }
-
 function looksLikeIp(ip){
   ip = normalizeDigits(ip);
   return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip);
@@ -485,11 +557,21 @@ function fakeProgress(){
   return ()=>clearInterval(t);
 }
 
-function statusText(status){
-  return status === "ok" ? "اوکیه ✅" : "نه داداش ❌";
-}
-function statusClass(status){
-  return status === "ok" ? "ok" : "fail";
+function friendlyError(apiError){
+  switch(apiError){
+    case "invalid_primary":
+      return "DNS پرایمری درست نیست. نمونه: 8.8.8.8 یا ۱.۱.۱.۱";
+    case "private_primary":
+      return "DNS پرایمری در بازه خصوصی/لوکال است. لطفاً یک DNS عمومی وارد کنید (مثل 1.1.1.1).";
+    case "private_secondary":
+      return "DNS سکندری در بازه خصوصی/لوکال است. اگر نیاز دارید، یک DNS عمومی وارد کنید.";
+    case "same_dns":
+      return "DNS پرایمری و سکندری یکسان هستند؛ وارد کردن یکی کافی است.";
+    case "server_error":
+      return "مشکلی در سمت سرور رخ داد. لطفاً دوباره امتحان کنید.";
+    default:
+      return "خطایی رخ داد. لطفاً دوباره امتحان کنید.";
+  }
 }
 
 function buildCards(templateGroups){
@@ -510,25 +592,24 @@ function buildCards(templateGroups){
         <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات بیشتر</button>
       </div>
       <div class="details" id="details-${g.key}">
-        هنوز تست نگرفتی.
+        هنوز تست انجام نشده است.
       </div>
     </div>
   `).join("");
 
-  // bind toggles
-  grid.querySelectorAll(".toggleBtn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const key = btn.getAttribute("data-key");
+  grid.querySelectorAll(".toggleBtn").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const key = b.getAttribute("data-key");
       const box = document.getElementById(`box-${key}`);
-      const open = btn.getAttribute("data-open") === "1";
+      const open = b.getAttribute("data-open") === "1";
       if(open){
         box.classList.remove("expanded");
-        btn.textContent = "جزئیات بیشتر";
-        btn.setAttribute("data-open","0");
+        b.textContent = "جزئیات بیشتر";
+        b.setAttribute("data-open","0");
       } else {
         box.classList.add("expanded");
-        btn.textContent = "بستن جزئیات";
-        btn.setAttribute("data-open","1");
+        b.textContent = "بستن جزئیات";
+        b.setAttribute("data-open","1");
       }
     });
   });
@@ -543,10 +624,46 @@ function setAllTesting(){
   });
   GROUP_ORDER.forEach(k=>{
     const st = document.getElementById(`state-${k}`);
-    if(st) st.textContent = "در حال تست...";
-    const p = document.getElementById(`p-${k}`); if(p) p.textContent = "P: ...";
-    const s = document.getElementById(`s-${k}`); if(s) s.textContent = "S: ...";
+    if(st) st.textContent = "در حال تست…";
+    const p = document.getElementById(`p-${k}`); if(p) p.textContent = "P: …";
+    const s = document.getElementById(`s-${k}`); if(s) s.textContent = "S: …";
+    const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال دریافت نتیجه…";
   });
+}
+
+function renderDnsBlock(label, g){
+  if(!g){
+    return `
+      <div class="dBlock">
+        <div class="dTitle">
+          <span>${label}</span>
+          <span class="dMeta">وارد نشده</span>
+        </div>
+      </div>
+    `;
+  }
+
+  const meta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
+  const items = (g.items || []).map(it=>{
+    const tagCls = it.ok ? "ok" : "fail";
+    const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
+    return `
+      <div class="dItem">
+        <div class="domain">${it.domain}</div>
+        <span class="dTag ${tagCls}">${tagTxt}</span>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="dBlock">
+      <div class="dTitle">
+        <span>${label}</span>
+        <span class="dMeta">${meta}</span>
+      </div>
+      ${items}
+    </div>
+  `;
 }
 
 function renderGroup(key, gp, gs){
@@ -556,53 +673,23 @@ function renderGroup(key, gp, gs){
   const sEl = document.getElementById(`s-${key}`);
   const details = document.getElementById(`details-${key}`);
 
-  // تعیین وضعیت کلی کارت:
-  // اگر primary ok باشه یا (اگه secondary هم هست) secondary ok باشه => کارت ok
   const overallOk = (gp && gp.status === "ok") || (gs && gs.status === "ok");
+
   box.classList.remove("testing");
   box.classList.add(overallOk ? "ok" : "fail");
 
-  stateEl.textContent = overallOk ? "کار می‌کنه ✅" : "به مشکل خورده ❌";
+  stateEl.textContent = overallOk ? "قابل استفاده ✅" : "مشکل دارد ❌";
 
-  // نمایش خلاصه P/S
   pEl.textContent = gp ? `P: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "P: -";
   sEl.textContent = gs ? `S: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : "S: -";
 
-  // جزئیات
-  const lines = [];
-  if(gp){
-    lines.push(`پرایمری: ${statusText(gp.status)} | موفق: ${gp.okCount}/${gp.total} | میانگین: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}`);
-  } else {
-    lines.push(`پرایمری: وارد نشده`);
-  }
-  if(gs){
-    lines.push(`سکندری: ${statusText(gs.status)} | موفق: ${gs.okCount}/${gs.total} | میانگین: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}`);
-  } else {
-    lines.push(`سکندری: وارد نشده`);
-  }
-
-  details.innerHTML = lines.map(x=>`<div>• ${x}</div>`).join("");
+  details.innerHTML = `
+    ${renderDnsBlock("DNS پرایمری", gp)}
+    ${renderDnsBlock("DNS سکندری", gs)}
+  `;
 }
 
-function friendlyError(apiError){
-  switch(apiError){
-    case "invalid_primary":
-      return "داداش DNS پرایمری رو درست وارد کن 😅 (مثلاً 8.8.8.8 یا ۱.۱.۱.۱)";
-    case "private_primary":
-      return "این DNS پرایمری که زدی خصوصی/لوکاله 😐 یه DNS عمومی بزن (مثل 1.1.1.1)";
-    case "private_secondary":
-      return "DNS سکندری خصوصی/لوکاله 😐 اگه می‌خوای بذاری، عمومی واردش کن.";
-    case "same_dns":
-      return "پرایمری و سکندری یکیه 😄 خب یکی‌ش کافیه!";
-    case "server_error":
-      return "یه مشکلی سمت سرور پیش اومد 😬 دوباره بزن تست رو.";
-    default:
-      return "یه خطای عجیب غریب خوردیم 😅 دوباره امتحان کن.";
-  }
-}
-
-(async function init(){
-  // قالب کارت‌ها از قبل می‌سازیم (با آیکون‌ها)
+(function init(){
   const templates = [
     { key:"xbox", title:"سرورهای Xbox", icon:"🎮" },
     { key:"playstation", title:"سرورهای PlayStation", icon:"🎮" },
@@ -623,35 +710,34 @@ btn.onclick = async ()=>{
   const s = normalizeDigits(sRaw);
 
   if(!p || !looksLikeIp(p)){
-    showError("داداش DNS پرایمری رو درست وارد کن 😅 (مثلاً 8.8.8.8 یا ۸.۸.۸.۸)");
+    showError("DNS پرایمری معتبر نیست. نمونه: 8.8.8.8 یا ۸.۸.۸.۸");
     return;
   }
   if(s && !looksLikeIp(s)){
-    showError("DNS سکندری رو یا خالی بذار، یا درست وارد کن 😄 (مثلاً 1.1.1.1)");
+    showError("DNS سکندری معتبر نیست. یا خالی بگذارید، یا درست وارد کنید (مثل 1.1.1.1).");
     return;
   }
   if(s && s === p){
-    showError("پرایمری و سکندری یکیه 😄 خب یکی‌ش کافیه!");
+    showError("DNS پرایمری و سکندری یکسان هستند؛ وارد کردن یکی کافی است.");
     return;
   }
 
   btn.disabled = true;
   setAllTesting();
-  showLoader("داریم آماده می‌شیم...");
-
+  showLoader("در حال آماده‌سازی هستیم…");
   const stop = fakeProgress();
 
   try{
-    // متن‌های سینمایی (حذف نشن_toggle)
-    setLoaderText("داریم تست می‌کنیم سرورهای Xbox...");
-    await new Promise(r=>setTimeout(r, 260));
-    setLoaderText("داریم تست می‌کنیم سرورهای PlayStation...");
-    await new Promise(r=>setTimeout(r, 260));
-    setLoaderText("داریم تست می‌کنیم سرور بازی‌ها...");
-    await new Promise(r=>setTimeout(r, 260));
-    setLoaderText("داریم تست می‌کنیم سرورهای بین‌المللی...");
-    await new Promise(r=>setTimeout(r, 260));
-    setLoaderText("داریم تست می‌کنیم سرورهای داخلی...");
+    // متن‌های مرحله‌ای (با دستور زبان درست)
+    setLoaderText("در حال تست سرورهای Xbox هستیم…");
+    await new Promise(r=>setTimeout(r, 220));
+    setLoaderText("در حال تست سرورهای PlayStation هستیم…");
+    await new Promise(r=>setTimeout(r, 220));
+    setLoaderText("در حال تست سرور بازی‌های پرطرفدار هستیم…");
+    await new Promise(r=>setTimeout(r, 220));
+    setLoaderText("در حال تست سرورهای بین‌المللی هستیم…");
+    await new Promise(r=>setTimeout(r, 220));
+    setLoaderText("در حال تست سرورهای داخلی هستیم…");
 
     const url = `/api/test?primary=${encodeURIComponent(p)}${s ? `&secondary=${encodeURIComponent(s)}` : ""}`;
     const r = await fetch(url, { cache: "no-store" });
@@ -667,7 +753,6 @@ btn.onclick = async ()=>{
       return;
     }
 
-    // map groups by key for primary/secondary
     const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
     const secondaryGroups = Object.fromEntries((j.results?.secondary?.groups || []).map(g=>[g.key, g]));
 
@@ -675,18 +760,18 @@ btn.onclick = async ()=>{
       const gp = primaryGroups[key] || null;
       const gs = (j.results?.secondary ? (secondaryGroups[key] || null) : null);
       renderGroup(key, gp, gs);
-      await new Promise(r=>setTimeout(r, 120));
+      await new Promise(r=>setTimeout(r, 110));
     }
 
-    setLoaderText("تموم شد ✅");
-    await new Promise(r=>setTimeout(r, 260));
+    setLoaderText("تست کامل شد ✅");
+    await new Promise(r=>setTimeout(r, 220));
     hideLoader();
 
   } catch(e){
     stop();
     bar.style.width = "100%";
     hideLoader();
-    showError("نت وصل نشد به سرور 😬 یه بار دیگه بزن تست رو.");
+    showError("ارتباط با سرور برقرار نشد. لطفاً دوباره امتحان کنید.");
   }
 
   setTimeout(()=>btn.disabled=false, 350);
