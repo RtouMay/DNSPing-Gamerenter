@@ -6,156 +6,243 @@
 <title>Game Renter | DNS Test</title>
 
 <style>
-:root {
-  --bg: #0b0f1a;
-  --card: #12182b;
-  --border: #1f2847;
-  --red: #e11d48;
-  --red-soft: #fb7185;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --ok: #22c55e;
-  --bad: #ef4444;
+:root{
+  --bg:#070a12;
+  --card:#0e1427;
+  --card2:#0b1022;
+  --border:#1b2444;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --red:#e11d48;
+  --red2:#fb7185;
+  --ok:#22c55e;
+  --warn:#fbbf24;
+  --bad:#ef4444;
 }
 
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont;
+  color:var(--text);
   background:
-    radial-gradient(1200px 600px at 10% -10%, #1b1f3a 0%, transparent 40%),
-    radial-gradient(800px 400px at 90% 10%, #2a0f1a 0%, transparent 45%),
+    radial-gradient(900px 500px at 10% 0%, rgba(225,29,72,.18), transparent 45%),
+    radial-gradient(900px 500px at 90% 10%, rgba(251,113,133,.10), transparent 50%),
+    radial-gradient(1200px 700px at 50% 110%, rgba(34,197,94,.08), transparent 50%),
     var(--bg);
-  color: var(--text);
 }
 
-.container {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
+.container{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:24px;
 }
 
-.card {
-  width: 100%;
-  max-width: 520px;
-  background: linear-gradient(180deg, #141a33, var(--card));
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 26px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.55);
-  animation: fadeUp .6s ease;
+.card{
+  width:100%;
+  max-width:560px;
+  border-radius:26px;
+  background:linear-gradient(180deg, rgba(18,24,43,.9), rgba(14,20,39,.9));
+  border:1px solid rgba(27,36,68,.9);
+  box-shadow:
+    0 24px 80px rgba(0,0,0,.65),
+    0 0 0 1px rgba(225,29,72,.12) inset,
+    0 0 60px rgba(225,29,72,.08);
+  padding:26px;
+  animation:in .65s cubic-bezier(.2,.8,.2,1);
+  position:relative;
+  overflow:hidden;
+}
+@keyframes in{
+  from{opacity:0; transform:translateY(14px) scale(.99)}
+  to{opacity:1; transform:translateY(0) scale(1)}
+}
+.card:before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:radial-gradient(600px 220px at 50% 0%, rgba(225,29,72,.22), transparent 60%);
+  pointer-events:none;
 }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+.header{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:18px;
+  position:relative;
+}
+.header img{width:56px; height:auto; filter:drop-shadow(0 8px 20px rgba(225,29,72,.25))}
+.header .title{margin:0; font-size:20px; letter-spacing:.2px}
+.header .sub{color:var(--muted); font-size:13px; margin-top:4px}
+
+label{display:block; color:var(--muted); font-size:14px; margin:12px 0 8px}
+
+.inputWrap{
+  position:relative;
+}
+input{
+  width:100%;
+  padding:14px 16px;
+  border-radius:16px;
+  border:1px solid rgba(27,36,68,.95);
+  background:rgba(11,16,34,.9);
+  color:var(--text);
+  font-size:16px;
+  outline:none;
+  transition:.25s;
+}
+input:focus{
+  border-color:rgba(225,29,72,.9);
+  box-shadow:0 0 0 4px rgba(225,29,72,.18);
+}
+.shake{
+  animation:shake .35s ease;
+}
+@keyframes shake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-6px)}
+  50%{transform:translateX(6px)}
+  75%{transform:translateX(-4px)}
+  100%{transform:translateX(0)}
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 22px;
+button{
+  width:100%;
+  margin-top:14px;
+  padding:14px 16px;
+  border-radius:18px;
+  border:none;
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  box-shadow:0 12px 30px rgba(225,29,72,.25);
+  transition:.25s;
 }
-.logo img {
-  width: 54px;
-  height: auto;
+button:hover{transform:translateY(-1px)}
+button:disabled{opacity:.6; cursor:not-allowed; transform:none}
+
+.progress{
+  margin-top:18px;
+  height:10px;
+  border-radius:999px;
+  background:rgba(11,16,34,.9);
+  border:1px solid rgba(27,36,68,.95);
+  overflow:hidden;
 }
-.logo h1 {
-  font-size: 20px;
-  margin: 0;
-  letter-spacing: .3px;
+.progress i{
+  display:block;
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg, var(--red), var(--red2));
+  transition:width .35s cubic-bezier(.2,.8,.2,1);
 }
 
-.subtitle {
-  color: var(--muted);
-  font-size: 14px;
-  margin-bottom: 18px;
+.steps{
+  margin-top:16px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border-radius:999px;
+  background:rgba(11,16,34,.9);
+  border:1px solid rgba(27,36,68,.95);
+  color:var(--muted);
+  font-size:13px;
+  transition:.25s;
+}
+.dot{
+  width:8px; height:8px; border-radius:50%;
+  background:rgba(156,163,175,.55);
+}
+.pill.active{
+  color:var(--text);
+  border-color:rgba(225,29,72,.55);
+  box-shadow:0 0 0 3px rgba(225,29,72,.12);
+}
+.pill.active .dot{
+  background:linear-gradient(180deg, var(--red), var(--red2));
+  box-shadow:0 0 16px rgba(225,29,72,.6);
+}
+.pill.done{
+  color:var(--text);
+  border-color:rgba(34,197,94,.55);
+}
+.pill.done .dot{background:var(--ok); box-shadow:0 0 16px rgba(34,197,94,.45)}
+.pill.fail{
+  color:var(--text);
+  border-color:rgba(239,68,68,.55);
+}
+.pill.fail .dot{background:var(--bad); box-shadow:0 0 16px rgba(239,68,68,.45)}
+
+.panel{
+  margin-top:18px;
+  padding:16px;
+  border-radius:18px;
+  background:rgba(11,16,34,.9);
+  border:1px dashed rgba(27,36,68,.95);
+  animation:pop .35s ease;
+}
+@keyframes pop{
+  from{opacity:0; transform:translateY(8px)}
+  to{opacity:1; transform:translateY(0)}
 }
 
-label {
-  font-size: 14px;
-  color: var(--muted);
-  display: block;
-  margin-bottom: 6px;
+.row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid rgba(27,36,68,.55);
 }
+.row:last-child{border-bottom:none}
 
-input {
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: #0b1022;
-  color: var(--text);
-  font-size: 16px;
-  outline: none;
-  transition: .25s;
+.badge{
+  font-size:12px;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(27,36,68,.95);
+  color:var(--muted);
+  background:rgba(7,10,18,.35);
 }
-input:focus {
-  border-color: var(--red);
-  box-shadow: 0 0 0 3px rgba(225,29,72,.25);
-}
+.badge.ok{color:#d1fae5; border-color:rgba(34,197,94,.55)}
+.badge.warn{color:#fff7ed; border-color:rgba(251,191,36,.55)}
+.badge.bad{color:#fee2e2; border-color:rgba(239,68,68,.55)}
 
-button {
-  width: 100%;
-  margin-top: 14px;
-  padding: 14px;
-  border-radius: 16px;
-  border: none;
-  background: linear-gradient(135deg, var(--red), var(--red-soft));
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-  transition: .25s;
+.miniBar{
+  margin-top:8px;
+  height:8px;
+  border-radius:999px;
+  overflow:hidden;
+  background:rgba(7,10,18,.35);
+  border:1px solid rgba(27,36,68,.55);
 }
-button:hover { transform: translateY(-1px); }
-button:disabled { opacity: .6; cursor: not-allowed; }
-
-.progress {
-  margin-top: 18px;
-  height: 10px;
-  border-radius: 999px;
-  background: #0b1022;
-  border: 1px solid var(--border);
-  overflow: hidden;
+.miniBar i{
+  display:block;
+  height:100%;
+  width:0%;
+  transition:width .45s cubic-bezier(.2,.8,.2,1);
 }
-.progress i {
-  display: block;
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--red), var(--red-soft));
-  transition: width .3s ease;
+.footer{
+  margin-top:14px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.8;
 }
-
-.result {
-  margin-top: 18px;
-  padding: 16px;
-  border-radius: 16px;
-  background: #0b1022;
-  border: 1px dashed var(--border);
-  animation: fadeUp .4s ease;
-}
-.result.ok { border-color: rgba(34,197,94,.6); }
-.result.bad { border-color: rgba(239,68,68,.6); }
-
-ul {
-  margin: 10px 0 0;
-  padding: 0 18px 0 0;
-}
-li { margin: 6px 0; }
-
-.footer {
-  margin-top: 14px;
-  font-size: 12px;
-  color: var(--muted);
-  text-align: center;
-}
-code {
-  background: #0b1022;
-  border: 1px solid var(--border);
-  padding: 3px 6px;
-  border-radius: 8px;
+code{
+  background:rgba(7,10,18,.35);
+  border:1px solid rgba(27,36,68,.65);
+  padding:2px 6px;
+  border-radius:8px;
 }
 </style>
 </head>
@@ -163,30 +250,38 @@ code {
 <body>
 <div class="container">
   <div class="card">
-
-    <div class="logo">
+    <div class="header">
       <img src="logo.png" alt="Game Renter">
       <div>
-        <h1>Game Renter</h1>
-        <div class="subtitle">تست DNS (ایرانی + خارجی)</div>
+        <h1 class="title">Game Renter</h1>
+        <div class="sub">تست DNS (ایرانی + خارجی) با نمایش مرحله‌ای</div>
       </div>
     </div>
 
-    <label>DNS (فقط عدد، مثل 1.1.1.1)</label>
-    <input id="dns" placeholder="مثلاً 8.8.8.8">
+    <label>DNS (فقط عدد مثل 1.1.1.1)</label>
+    <div class="inputWrap">
+      <input id="dns" placeholder="مثلاً 8.8.8.8">
+    </div>
 
     <button id="btn">شروع تست</button>
 
     <div class="progress"><i id="bar"></i></div>
 
-    <div id="out" class="result">
-      DNS رو وارد کن و روی «شروع تست» بزن
+    <div class="steps">
+      <div class="pill" id="s1"><span class="dot"></span>Connecting</div>
+      <div class="pill" id="s2"><span class="dot"></span>Test google.com</div>
+      <div class="pill" id="s3"><span class="dot"></span>Test aparat.com</div>
+      <div class="pill" id="s4"><span class="dot"></span>Done</div>
+    </div>
+
+    <div id="out" class="panel">
+      DNS رو وارد کن و روی «شروع تست» بزن.
     </div>
 
     <div class="footer">
-      دامنه‌های تست: <code>google.com</code> و <code>aparat.com</code>
+      دامنه‌های تست: <code>google.com</code> و <code>aparat.com</code><br>
+      هر چی ms کمتر باشه بهتره.
     </div>
-
   </div>
 </div>
 
@@ -196,54 +291,134 @@ const dns = document.getElementById('dns');
 const bar = document.getElementById('bar');
 const out = document.getElementById('out');
 
+const s1 = document.getElementById('s1');
+const s2 = document.getElementById('s2');
+const s3 = document.getElementById('s3');
+const s4 = document.getElementById('s4');
+
+function resetSteps(){
+  [s1,s2,s3,s4].forEach(x=>x.className='pill');
+}
+function stepActive(el){ el.className = 'pill active'; }
+function stepDone(el){ el.className = 'pill done'; }
+function stepFail(el){ el.className = 'pill fail'; }
+
+function isIpLike(v){ return /^[0-9.]+$/.test(v.trim()); }
+
 function fakeProgress(){
-  let p = 8;
-  bar.style.width = '8%';
+  let p = 6;
+  bar.style.width = '6%';
   const t = setInterval(()=>{
-    p = Math.min(90, p + Math.random()*10);
+    p = Math.min(92, p + Math.random()*10);
     bar.style.width = Math.floor(p) + '%';
-  }, 250);
+  }, 220);
   return ()=>clearInterval(t);
+}
+
+function badgeFor(ms){
+  // خیلی ساده:
+  // <= 80ms عالی، <= 200 متوسط، بالاتر ضعیف
+  if (ms <= 80) return { cls:'ok', txt:'FAST' };
+  if (ms <= 200) return { cls:'warn', txt:'OK' };
+  return { cls:'bad', txt:'SLOW' };
+}
+
+function widthFor(ms){
+  // ms کمتر => درصد بیشتر (نمایش بصری)
+  // 20ms => 95% ، 300ms => 20%
+  const w = Math.max(20, Math.min(95, 110 - (ms/3)));
+  return Math.floor(w) + '%';
+}
+
+function miniBarColor(cls){
+  if (cls==='ok') return 'linear-gradient(90deg, var(--ok), rgba(34,197,94,.35))';
+  if (cls==='warn') return 'linear-gradient(90deg, var(--warn), rgba(251,191,36,.35))';
+  return 'linear-gradient(90deg, var(--bad), rgba(239,68,68,.35))';
+}
+
+function renderResults(results){
+  const rows = results.map(r=>{
+    if(!r.ok){
+      return `
+        <div class="row">
+          <div><b>${r.domain}</b></div>
+          <span class="badge bad">FAIL</span>
+        </div>
+      `;
+    }
+    const b = badgeFor(r.ms);
+    return `
+      <div class="row">
+        <div>
+          <b>${r.domain}</b>
+          <div class="miniBar"><i style="width:${widthFor(r.ms)}; background:${miniBarColor(b.cls)}"></i></div>
+        </div>
+        <div style="text-align:left">
+          <div style="font-weight:700">${r.ms}ms</div>
+          <span class="badge ${b.cls}">${b.txt}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  out.innerHTML = `✅ نتیجه تست:<div style="margin-top:10px">${rows}</div>`;
 }
 
 btn.onclick = async ()=>{
   const v = dns.value.trim();
-  if(!/^[0-9.]+$/.test(v)){
-    out.className = 'result bad';
-    out.textContent = '❌ DNS باید فقط عدد باشه';
+
+  if(!v || !isIpLike(v)){
+    dns.classList.remove('shake'); void dns.offsetWidth; dns.classList.add('shake');
+    out.className = 'panel';
+    out.innerHTML = '❌ لطفاً DNS رو فقط به صورت عددی وارد کن (مثلاً 1.1.1.1)';
     return;
   }
 
   btn.disabled = true;
-  out.className = 'result';
-  out.textContent = 'در حال تست...';
+  resetSteps();
+  out.className = 'panel';
+  out.textContent = 'در حال شروع...';
+
   const stop = fakeProgress();
 
   try{
-    const r = await fetch(`/api/test?dns=${encodeURIComponent(v)}`);
+    stepActive(s1);
+    await new Promise(r=>setTimeout(r, 250)); // نرم‌تر
+
+    const r = await fetch(`/api/test?dns=${encodeURIComponent(v)}`, { cache:'no-store' });
     const j = await r.json();
+
+    // چون API یکجا جواب می‌ده، ما مرحله‌ها رو نمایشی و نرم می‌کنیم:
+    stepDone(s1);
+    stepActive(s2);
+    await new Promise(r=>setTimeout(r, 250));
+    stepDone(s2);
+    stepActive(s3);
+    await new Promise(r=>setTimeout(r, 250));
+
     stop();
     bar.style.width = '100%';
 
     if(!j.ok){
-      out.className = 'result bad';
-      out.textContent = '❌ خطا در تست DNS';
+      stepFail(s3);
+      stepFail(s4);
+      out.innerHTML = '❌ خطا در تست DNS';
     } else {
-      out.className = 'result ok';
-      out.innerHTML =
-        '✅ نتیجه تست:<ul>' +
-        j.results.map(x =>
-          `<li><b>${x.domain}</b> — ${x.ok ? x.ms+'ms' : 'Fail'}</li>`
-        ).join('') +
-        '</ul>';
+      stepDone(s3);
+      stepActive(s4);
+      renderResults(j.results || []);
+      stepDone(s4);
     }
-  } catch {
+
+  } catch(e){
     stop();
-    out.className = 'result bad';
-    out.textContent = '❌ ارتباط با سرور برقرار نشد';
+    bar.style.width = '100%';
+    resetSteps();
+    stepFail(s1); stepFail(s2); stepFail(s3); stepFail(s4);
+    out.innerHTML = '❌ ارتباط با سرور برقرار نشد';
   }
 
-  setTimeout(()=>btn.disabled=false, 400);
+  setTimeout(()=>btn.disabled=false, 450);
 };
 </script>
 </body>
