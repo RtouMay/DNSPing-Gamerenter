@@ -29,7 +29,6 @@
   --red:#e11d48;
   --red2:#fb7185;
   --ok:#22c55e;
-  --warn:#fbbf24;
   --bad:#ef4444;
   --panel:#0b1022;
 }
@@ -50,7 +49,7 @@ body{
 
 .card{
   width:100%;
-  max-width:640px;
+  max-width:720px;
   border-radius:26px;
   background:linear-gradient(180deg, rgba(18,24,43,.9), rgba(14,20,39,.9));
   border:1px solid rgba(27,36,68,.9);
@@ -63,7 +62,6 @@ body{
   position:relative;
   overflow:hidden;
 }
-
 @keyframes in{ from{opacity:0; transform:translateY(14px) scale(.99)} to{opacity:1; transform:translateY(0) scale(1)} }
 
 .card:before{
@@ -120,26 +118,41 @@ body{
 }
 
 /* keep content above effects */
-.header, label, .inputWrap, button, .progress, .grid, .footer{ position:relative; z-index:2; }
+.header, label, .inputs, button, .progress, .grid, .footer, .errorBox{ position:relative; z-index:2; }
 
-.header{ display:flex; align-items:center; gap:14px; margin-bottom:18px; }
-.header img{
-  width:92px;
+.header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:18px;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.brand img{
+  width:120px; /* بزرگ‌تر */
   height:auto;
   filter:drop-shadow(0 14px 30px rgba(225,29,72,.38));
-  animation: logoFloat 3.6s ease-in-out infinite;
-  transform-origin:center;
+  /* انیمیشن حذف شد */
 }
-@keyframes logoFloat{
-  0%,100%{ transform: translateY(0) scale(1); }
-  50%{ transform: translateY(-6px) scale(1.03); }
-}
-.title{ margin:0; font-size:20px; font-weight:700; letter-spacing:.2px; }
+.title{ margin:0; font-size:22px; font-weight:700; letter-spacing:.2px; }
 .sub{ color:var(--muted); font-size:13px; margin-top:4px; }
 
-label{ display:block; color:var(--muted); font-size:14px; margin:12px 0 8px; }
-.inputWrap{ position:relative; }
+label{ display:block; color:var(--muted); font-size:14px; margin:10px 0 8px; }
 
+.inputs{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px;
+}
+@media (max-width: 620px){
+  .inputs{ grid-template-columns: 1fr; }
+}
+
+.inputWrap{ position:relative; }
 input{
   width:100%;
   padding:14px 16px;
@@ -152,11 +165,12 @@ input{
   transition:.25s;
 }
 input:focus{ border-color:rgba(225,29,72,.9); box-shadow:0 0 0 4px rgba(225,29,72,.18); }
-.shake{ animation:shake .35s ease; }
-@keyframes shake{
-  0%{transform:translateX(0)} 25%{transform:translateX(-6px)}
-  50%{transform:translateX(6px)} 75%{transform:translateX(-4px)}
-  100%{transform:translateX(0)}
+
+.helper{
+  margin-top:8px;
+  color: var(--muted);
+  font-size:12px;
+  line-height: 1.8;
 }
 
 button{
@@ -177,7 +191,7 @@ button:hover{ transform:translateY(-1px) }
 button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 
 .progress{
-  margin-top:18px;
+  margin-top:14px;
   height:10px;
   border-radius:999px;
   background:rgba(11,16,34,.9);
@@ -192,14 +206,27 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   transition:width .35s cubic-bezier(.2,.8,.2,1);
 }
 
-/* 4 cards grid */
+/* error box */
+.errorBox{
+  margin-top:12px;
+  padding:12px 14px;
+  border-radius:16px;
+  border:1px dashed rgba(239,68,68,.6);
+  background: rgba(11,16,34,.85);
+  color:#fee2e2;
+  font-size:13px;
+  display:none;
+}
+.errorBox.show{ display:block; }
+
+/* cards */
 .grid{
-  margin-top:18px;
+  margin-top:16px;
   display:grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap:12px;
 }
-@media (max-width: 560px){
+@media (max-width: 620px){
   .grid{ grid-template-columns: 1fr; }
 }
 
@@ -230,41 +257,40 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   border:1px solid rgba(27,36,68,.85);
   background: rgba(7,10,18,.35);
 }
-
 .state{
-  display:inline-flex;
+  display:flex;
   align-items:center;
-  gap:8px;
+  gap:10px;
   font-size:12px;
   color: var(--muted);
+  flex-wrap:wrap;
+  justify-content:flex-end;
 }
 .light{
   width:10px; height:10px; border-radius:50%;
   background: rgba(156,163,175,.45);
-  box-shadow: 0 0 0 0 rgba(225,29,72,0);
   transition:.25s;
 }
 
-.box.ok{
-  border-color: rgba(34,197,94,.55);
-  box-shadow: 0 0 0 3px rgba(34,197,94,.10);
+.badges{
+  display:flex;
+  gap:8px;
+  align-items:center;
 }
-.box.ok .light{
-  background: var(--ok);
-  box-shadow: 0 0 18px rgba(34,197,94,.55);
+.pill{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:999px;
+  border:1px solid rgba(27,36,68,.8);
+  background: rgba(7,10,18,.35);
+  color: var(--muted);
 }
-.box.fail{
-  border-color: rgba(239,68,68,.55);
-  box-shadow: 0 0 0 3px rgba(239,68,68,.10);
-}
-.box.fail .light{
-  background: var(--bad);
-  box-shadow: 0 0 18px rgba(239,68,68,.55);
-}
-.box.testing{
-  border-color: rgba(225,29,72,.35);
-  box-shadow: 0 0 0 3px rgba(225,29,72,.08);
-}
+
+.box.ok{ border-color: rgba(34,197,94,.55); box-shadow: 0 0 0 3px rgba(34,197,94,.10); }
+.box.ok .light{ background: var(--ok); box-shadow: 0 0 18px rgba(34,197,94,.55); }
+.box.fail{ border-color: rgba(239,68,68,.55); box-shadow: 0 0 0 3px rgba(239,68,68,.10); }
+.box.fail .light{ background: var(--bad); box-shadow: 0 0 18px rgba(239,68,68,.55); }
+.box.testing{ border-color: rgba(225,29,72,.35); box-shadow: 0 0 0 3px rgba(225,29,72,.08); }
 .box.testing .light{
   background: linear-gradient(180deg, var(--red), var(--red2));
   box-shadow: 0 0 18px rgba(225,29,72,.45);
@@ -275,55 +301,37 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   50%{ opacity:1; transform:scale(1); }
 }
 
-.meta{
+/* expand/collapse */
+.actions{
   margin-top:10px;
   display:flex;
-  align-items:center;
-  justify-content:space-between;
-  color: var(--muted);
-  font-size:12px;
+  justify-content:flex-end;
 }
-.kpi{
-  font-weight:700;
-  color: var(--text);
+.toggleBtn{
+  border:none;
+  background:transparent;
+  color: rgba(251,113,133,.95);
+  font-size:12px;
+  cursor:pointer;
+  padding:6px 8px;
+  border-radius:10px;
+}
+.toggleBtn:hover{
+  background: rgba(225,29,72,.10);
 }
 
 .details{
   margin-top:10px;
-  border-top:1px solid rgba(27,36,68,.55);
   padding-top:10px;
+  border-top:1px solid rgba(27,36,68,.55);
   display:none;
-  font-size:12px;
   color: var(--muted);
-}
-.box.showDetails .details{ display:block; }
-
-.item{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  padding:6px 0;
-}
-.item b{ color: var(--text); font-weight:700; }
-.tag{
-  font-size:11px;
-  padding:3px 8px;
-  border-radius:999px;
-  border:1px solid rgba(27,36,68,.8);
-  background: rgba(7,10,18,.35);
-}
-.tag.ok{ border-color: rgba(34,197,94,.55); color:#d1fae5; }
-.tag.fail{ border-color: rgba(239,68,68,.55); color:#fee2e2; }
-
-.footer{
-  margin-top:14px;
-  text-align:center;
-  color:var(--muted);
   font-size:12px;
-  line-height:1.9;
+  line-height:1.8;
 }
+.box.expanded .details{ display:block; }
 
-/* cinematic loader overlay */
+/* cinematic loader overlay (gif) */
 .loader{
   position:absolute;
   inset:0;
@@ -331,15 +339,14 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   display:none;
   align-items:center;
   justify-content:center;
-  background: radial-gradient(900px 500px at 50% 0%, rgba(225,29,72,.25), transparent 60%),
-              rgba(7,10,18,.72);
+  background: rgba(0,0,0,.78);
   backdrop-filter: blur(10px);
 }
-.loader.show{ display:flex; animation: fadeIn .25s ease; }
+.loader.show{ display:flex; animation: fadeIn .2s ease; }
 @keyframes fadeIn{ from{opacity:0} to{opacity:1} }
 
 .loaderBox{
-  width:min(420px, 92%);
+  width:min(520px, 92%);
   text-align:center;
   padding:18px 16px;
   border-radius:22px;
@@ -349,173 +356,77 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   position:relative;
   overflow:hidden;
 }
-.loaderScan{
-  position:absolute;
-  inset:0;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255,255,255,.06),
-    rgba(255,255,255,.06) 1px,
-    transparent 1px,
-    transparent 7px
-  );
-  opacity:.08;
-  mix-blend-mode: overlay;
-  pointer-events:none;
-}
-.ring{
-  width:140px;
-  height:140px;
-  border-radius:50%;
-  margin: 6px auto 10px;
-  position:relative;
-  display:grid;
-  place-items:center;
-}
-.ring:before{
-  content:"";
-  position:absolute;
-  inset:-6px;
-  border-radius:50%;
-  background: conic-gradient(from 0deg, rgba(225,29,72,.0), rgba(225,29,72,.9), rgba(251,113,133,.0));
-  filter: blur(1px);
-  animation: spin 1.2s linear infinite;
-}
-@keyframes spin{ to{ transform: rotate(360deg); } }
-.ring:after{
-  content:"";
-  position:absolute;
-  inset:10px;
-  border-radius:50%;
-  background: radial-gradient(circle at 50% 50%, rgba(225,29,72,.10), transparent 55%);
-  border:1px solid rgba(225,29,72,.18);
-}
-.loaderLogo{
-  width:86px;
+.loaderGif{
+  width: 200px;
   height:auto;
-  filter: drop-shadow(0 18px 40px rgba(225,29,72,.45));
-  animation: breathe 1.6s ease-in-out infinite;
-  position:relative;
-  z-index:2;
-}
-@keyframes breathe{
-  0%,100%{ transform: scale(1); opacity: .92; }
-  50%{ transform: scale(1.06); opacity: 1; }
-}
-.loaderTitle{ font-weight:700; font-size:16px; margin-top:6px; }
-.loaderStep{ margin-top:6px; color:var(--muted); font-size:13px; }
-.loaderBar{
-  margin:14px auto 2px;
-  width: 100%;
-  height: 10px;
-  border-radius: 999px;
-  overflow:hidden;
-  border:1px solid rgba(27,36,68,.85);
-  background: rgba(7,10,18,.35);
-}
-.loaderBar i{
   display:block;
-  height:100%;
-  width:0%;
-  background: linear-gradient(90deg, rgba(225,29,72,.0), rgba(225,29,72,.95), rgba(251,113,133,.85), rgba(225,29,72,.0));
-  animation: loaderMove 1.05s ease-in-out infinite;
+  margin: 6px auto 10px;
+  opacity: .95;
 }
-@keyframes loaderMove{
-  0%{ transform: translateX(-60%); }
-  100%{ transform: translateX(60%); }
+.loaderTitle{ font-weight:700; font-size:16px; margin-top:4px; }
+.loaderStep{ margin-top:6px; color:var(--muted); font-size:13px; }
+
+.footer{
+  margin-top:12px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.9;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-  <div class="card" id="card">
+  <div class="card">
 
     <div class="noise"></div>
     <div class="scanlines"></div>
 
     <div class="loader" id="loader">
       <div class="loaderBox">
-        <div class="loaderScan"></div>
-        <div class="ring">
-          <img class="loaderLogo" src="logo.png" alt="Game Renter">
-        </div>
+        <img class="loaderGif" src="loader.gif" alt="loading">
         <div class="loaderTitle">Game Renter</div>
-        <div class="loaderStep" id="loaderText">Connecting...</div>
-        <div class="loaderBar"><i></i></div>
+        <div class="loaderStep" id="loaderText">در حال آماده‌سازی...</div>
       </div>
     </div>
 
     <div class="header">
-      <img src="logo.png" alt="Game Renter">
-      <div>
-        <h1 class="title">Game Renter</h1>
-        <div class="sub">تست DNS برای Xbox / PlayStation + داخلی/بین‌المللی</div>
+      <div class="brand">
+        <img src="logo.png" alt="Game Renter">
+        <div>
+          <h1 class="title">Game Renter</h1>
+          <div class="sub">تست DNS برای Xbox / PlayStation + داخلی/بین‌المللی</div>
+        </div>
       </div>
     </div>
 
-    <label>DNS (فقط عدد مثل 1.1.1.1)</label>
-    <div class="inputWrap">
-      <input id="dns" placeholder="مثلاً 8.8.8.8">
+    <label>DNS ها رو وارد کن (یکی هم کافیه)</label>
+    <div class="inputs">
+      <div class="inputWrap">
+        <input id="primary" placeholder="DNS پرایمری (مثلاً 8.8.8.8 یا ۸.۸.۸.۸)">
+      </div>
+      <div class="inputWrap">
+        <input id="secondary" placeholder="DNS سکندری (اختیاری)">
+      </div>
+    </div>
+    <div class="helper">
+      اگر فقط یکی وارد کنی هم تست می‌گیریم. اگر دوتا وارد کنی، هر دوتاش رو جدا تست می‌کنیم.
     </div>
 
     <button id="btn">شروع تست</button>
 
     <div class="progress"><i id="bar"></i></div>
 
-    <!-- 4 boxes -->
+    <div class="errorBox" id="err"></div>
+
     <div class="grid" id="grid">
-      <div class="box testing" id="box-xbox">
-        <div class="boxHead">
-          <div class="boxTitle"><span class="icon">🎮</span> سرورهای Xbox</div>
-          <div class="state"><span class="light"></span><span id="txt-xbox">آماده تست</span></div>
-        </div>
-        <div class="meta">
-          <div>موفق: <span class="kpi" id="kpi-xbox">-</span></div>
-          <div>میانگین: <span class="kpi" id="avg-xbox">-</span></div>
-        </div>
-        <div class="details" id="det-xbox"></div>
-      </div>
-
-      <div class="box testing" id="box-playstation">
-        <div class="boxHead">
-          <div class="boxTitle"><span class="icon">🎮</span> سرورهای PlayStation</div>
-          <div class="state"><span class="light"></span><span id="txt-playstation">آماده تست</span></div>
-        </div>
-        <div class="meta">
-          <div>موفق: <span class="kpi" id="kpi-playstation">-</span></div>
-          <div>میانگین: <span class="kpi" id="avg-playstation">-</span></div>
-        </div>
-        <div class="details" id="det-playstation"></div>
-      </div>
-
-      <div class="box testing" id="box-international">
-        <div class="boxHead">
-          <div class="boxTitle"><span class="icon">🌍</span> سرورهای بین‌المللی</div>
-          <div class="state"><span class="light"></span><span id="txt-international">آماده تست</span></div>
-        </div>
-        <div class="meta">
-          <div>موفق: <span class="kpi" id="kpi-international">-</span></div>
-          <div>میانگین: <span class="kpi" id="avg-international">-</span></div>
-        </div>
-        <div class="details" id="det-international"></div>
-      </div>
-
-      <div class="box testing" id="box-internal">
-        <div class="boxHead">
-          <div class="boxTitle"><span class="icon">🇮🇷</span> سرورهای داخلی</div>
-          <div class="state"><span class="light"></span><span id="txt-internal">آماده تست</span></div>
-        </div>
-        <div class="meta">
-          <div>موفق: <span class="kpi" id="kpi-internal">-</span></div>
-          <div>میانگین: <span class="kpi" id="avg-internal">-</span></div>
-        </div>
-        <div class="details" id="det-internal"></div>
-      </div>
+      <!-- cards injected by JS -->
     </div>
 
     <div class="footer">
-      نکته:این تست بررسی میکنه که DNS می‌تونه دامنه‌های مهم و کاربردی رو باز کنه یا نه، نتیجه نهایی به نوع اینترنت و منطقه بستگی داره.د.
+      این تست فقط بررسی می‌کنه DNS بتونه دامنه‌های کلیدی هر سرویس رو Resolve کنه.
+      نتیجه نهایی ممکنه به ISP/منطقه هم بستگی داشته باشه.
     </div>
 
   </div>
@@ -523,15 +434,46 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 
 <script>
 const btn = document.getElementById('btn');
-const dns = document.getElementById('dns');
+const primary = document.getElementById('primary');
+const secondary = document.getElementById('secondary');
 const bar = document.getElementById('bar');
+const err = document.getElementById('err');
 
 const loader = document.getElementById('loader');
 const loaderText = document.getElementById('loaderText');
+const grid = document.getElementById('grid');
 
-const groupKeys = ["xbox","playstation","international","internal"];
+const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
 
-function isIpLike(v){ return /^[0-9.]+$/.test(v.trim()); }
+function normalizeDigits(input){
+  const map = {
+    "۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9",
+    "٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9",
+    "٫":".","٬":"","،":"."," ":""
+  };
+  return (input||"").toString().trim().split("").map(ch => map[ch] ?? ch).join("");
+}
+
+function looksLikeIp(ip){
+  ip = normalizeDigits(ip);
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip);
+}
+
+function showError(msg){
+  err.textContent = msg;
+  err.classList.add('show');
+}
+function clearError(){
+  err.textContent = '';
+  err.classList.remove('show');
+}
+
+function showLoader(text){
+  loaderText.textContent = text;
+  loader.classList.add('show');
+}
+function setLoaderText(text){ loaderText.textContent = text; }
+function hideLoader(){ loader.classList.remove('show'); }
 
 function fakeProgress(){
   let p = 6;
@@ -543,111 +485,211 @@ function fakeProgress(){
   return ()=>clearInterval(t);
 }
 
-function showLoader(text){
-  loaderText.textContent = text;
-  loader.classList.add('show');
+function statusText(status){
+  return status === "ok" ? "اوکیه ✅" : "نه داداش ❌";
 }
-function setLoaderText(text){ loaderText.textContent = text; }
-function hideLoader(){ loader.classList.remove('show'); }
+function statusClass(status){
+  return status === "ok" ? "ok" : "fail";
+}
 
-function setTestingUI(){
-  bar.style.width = "0%";
-  groupKeys.forEach(k=>{
-    const box = document.getElementById(`box-${k}`);
-    box.classList.remove("ok","fail","showDetails");
-    box.classList.add("testing");
-    document.getElementById(`txt-${k}`).textContent = "در حال تست...";
-    document.getElementById(`kpi-${k}`).textContent = "-";
-    document.getElementById(`avg-${k}`).textContent = "-";
-    document.getElementById(`det-${k}`).innerHTML = "";
+function buildCards(templateGroups){
+  grid.innerHTML = templateGroups.map(g => `
+    <div class="box testing" id="box-${g.key}">
+      <div class="boxHead">
+        <div class="boxTitle"><span class="icon">${g.icon}</span>${g.title}</div>
+        <div class="state">
+          <span class="light"></span>
+          <span id="state-${g.key}">آماده</span>
+          <span class="badges">
+            <span class="pill" id="p-${g.key}">P: -</span>
+            <span class="pill" id="s-${g.key}">S: -</span>
+          </span>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات بیشتر</button>
+      </div>
+      <div class="details" id="details-${g.key}">
+        هنوز تست نگرفتی.
+      </div>
+    </div>
+  `).join("");
+
+  // bind toggles
+  grid.querySelectorAll(".toggleBtn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const key = btn.getAttribute("data-key");
+      const box = document.getElementById(`box-${key}`);
+      const open = btn.getAttribute("data-open") === "1";
+      if(open){
+        box.classList.remove("expanded");
+        btn.textContent = "جزئیات بیشتر";
+        btn.setAttribute("data-open","0");
+      } else {
+        box.classList.add("expanded");
+        btn.textContent = "بستن جزئیات";
+        btn.setAttribute("data-open","1");
+      }
+    });
   });
 }
 
-function renderGroup(g){
-  const box = document.getElementById(`box-${g.key}`);
-  const txt = document.getElementById(`txt-${g.key}`);
-  const kpi = document.getElementById(`kpi-${g.key}`);
-  const avg = document.getElementById(`avg-${g.key}`);
-  const det = document.getElementById(`det-${g.key}`);
-
-  box.classList.remove("testing");
-  box.classList.add(g.status === "ok" ? "ok" : "fail");
-  box.classList.add("showDetails");
-
-  txt.textContent = (g.status === "ok") ? "کار می‌کند" : "کار نمی‌کند";
-  kpi.textContent = `${g.okCount}/${g.total}`;
-  avg.textContent = (g.avgMs == null) ? "-" : `${g.avgMs}ms`;
-
-  det.innerHTML = g.items.map(it=>{
-    const tagCls = it.ok ? "ok" : "fail";
-    const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
-    return `<div class="item"><div><b>${it.domain}</b></div><span class="tag ${tagCls}">${tagTxt}</span></div>`;
-  }).join("");
+function setAllTesting(){
+  bar.style.width = "0%";
+  clearError();
+  document.querySelectorAll(".box").forEach(b=>{
+    b.classList.remove("ok","fail","expanded");
+    b.classList.add("testing");
+  });
+  GROUP_ORDER.forEach(k=>{
+    const st = document.getElementById(`state-${k}`);
+    if(st) st.textContent = "در حال تست...";
+    const p = document.getElementById(`p-${k}`); if(p) p.textContent = "P: ...";
+    const s = document.getElementById(`s-${k}`); if(s) s.textContent = "S: ...";
+  });
 }
 
-btn.onclick = async ()=>{
-  const v = dns.value.trim();
+function renderGroup(key, gp, gs){
+  const box = document.getElementById(`box-${key}`);
+  const stateEl = document.getElementById(`state-${key}`);
+  const pEl = document.getElementById(`p-${key}`);
+  const sEl = document.getElementById(`s-${key}`);
+  const details = document.getElementById(`details-${key}`);
 
-  if(!v || !isIpLike(v)){
-    dns.classList.remove('shake'); void dns.offsetWidth; dns.classList.add('shake');
+  // تعیین وضعیت کلی کارت:
+  // اگر primary ok باشه یا (اگه secondary هم هست) secondary ok باشه => کارت ok
+  const overallOk = (gp && gp.status === "ok") || (gs && gs.status === "ok");
+  box.classList.remove("testing");
+  box.classList.add(overallOk ? "ok" : "fail");
+
+  stateEl.textContent = overallOk ? "کار می‌کنه ✅" : "به مشکل خورده ❌";
+
+  // نمایش خلاصه P/S
+  pEl.textContent = gp ? `P: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "P: -";
+  sEl.textContent = gs ? `S: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : "S: -";
+
+  // جزئیات
+  const lines = [];
+  if(gp){
+    lines.push(`پرایمری: ${statusText(gp.status)} | موفق: ${gp.okCount}/${gp.total} | میانگین: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}`);
+  } else {
+    lines.push(`پرایمری: وارد نشده`);
+  }
+  if(gs){
+    lines.push(`سکندری: ${statusText(gs.status)} | موفق: ${gs.okCount}/${gs.total} | میانگین: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}`);
+  } else {
+    lines.push(`سکندری: وارد نشده`);
+  }
+
+  details.innerHTML = lines.map(x=>`<div>• ${x}</div>`).join("");
+}
+
+function friendlyError(apiError){
+  switch(apiError){
+    case "invalid_primary":
+      return "داداش DNS پرایمری رو درست وارد کن 😅 (مثلاً 8.8.8.8 یا ۱.۱.۱.۱)";
+    case "private_primary":
+      return "این DNS پرایمری که زدی خصوصی/لوکاله 😐 یه DNS عمومی بزن (مثل 1.1.1.1)";
+    case "private_secondary":
+      return "DNS سکندری خصوصی/لوکاله 😐 اگه می‌خوای بذاری، عمومی واردش کن.";
+    case "same_dns":
+      return "پرایمری و سکندری یکیه 😄 خب یکی‌ش کافیه!";
+    case "server_error":
+      return "یه مشکلی سمت سرور پیش اومد 😬 دوباره بزن تست رو.";
+    default:
+      return "یه خطای عجیب غریب خوردیم 😅 دوباره امتحان کن.";
+  }
+}
+
+(async function init(){
+  // قالب کارت‌ها از قبل می‌سازیم (با آیکون‌ها)
+  const templates = [
+    { key:"xbox", title:"سرورهای Xbox", icon:"🎮" },
+    { key:"playstation", title:"سرورهای PlayStation", icon:"🎮" },
+    { key:"games", title:"سرور بازی‌های پرطرفدار", icon:"🔥" },
+    { key:"international", title:"سرورهای بین‌المللی", icon:"🌍" },
+    { key:"internal", title:"سرورهای داخلی", icon:"🇮🇷" },
+  ];
+  buildCards(templates);
+})();
+
+btn.onclick = async ()=>{
+  clearError();
+
+  const pRaw = primary.value.trim();
+  const sRaw = secondary.value.trim();
+
+  const p = normalizeDigits(pRaw);
+  const s = normalizeDigits(sRaw);
+
+  if(!p || !looksLikeIp(p)){
+    showError("داداش DNS پرایمری رو درست وارد کن 😅 (مثلاً 8.8.8.8 یا ۸.۸.۸.۸)");
+    return;
+  }
+  if(s && !looksLikeIp(s)){
+    showError("DNS سکندری رو یا خالی بذار، یا درست وارد کن 😄 (مثلاً 1.1.1.1)");
+    return;
+  }
+  if(s && s === p){
+    showError("پرایمری و سکندری یکیه 😄 خب یکی‌ش کافیه!");
     return;
   }
 
   btn.disabled = true;
-  setTestingUI();
-  showLoader("Connecting...");
+  setAllTesting();
+  showLoader("داریم آماده می‌شیم...");
+
   const stop = fakeProgress();
 
   try{
-    // cinematic step texts (نمایشی)
+    // متن‌های سینمایی (حذف نشن_toggle)
+    setLoaderText("داریم تست می‌کنیم سرورهای Xbox...");
     await new Promise(r=>setTimeout(r, 260));
-    setLoaderText("Testing Xbox servers...");
+    setLoaderText("داریم تست می‌کنیم سرورهای PlayStation...");
     await new Promise(r=>setTimeout(r, 260));
-    setLoaderText("Testing PlayStation servers...");
+    setLoaderText("داریم تست می‌کنیم سرور بازی‌ها...");
     await new Promise(r=>setTimeout(r, 260));
-    setLoaderText("Testing International servers...");
+    setLoaderText("داریم تست می‌کنیم سرورهای بین‌المللی...");
     await new Promise(r=>setTimeout(r, 260));
-    setLoaderText("Testing Iran servers...");
+    setLoaderText("داریم تست می‌کنیم سرورهای داخلی...");
 
-    const r = await fetch(`/api/test?dns=${encodeURIComponent(v)}`, { cache:'no-store' });
+    const url = `/api/test?primary=${encodeURIComponent(p)}${s ? `&secondary=${encodeURIComponent(s)}` : ""}`;
+    const r = await fetch(url, { cache: "no-store" });
     const j = await r.json();
 
     stop();
-    bar.style.width = '100%';
+    bar.style.width = "100%";
 
     if(!j.ok){
-      setLoaderText("Failed.");
-      await new Promise(r=>setTimeout(r, 350));
       hideLoader();
-      alert("خطا در تست DNS");
+      showError(friendlyError(j.error));
       btn.disabled = false;
       return;
     }
 
-    // render in order with small delays for smooth animation
-    const map = Object.fromEntries((j.groups || []).map(g=>[g.key, g]));
-    const order = ["xbox","playstation","international","internal"];
+    // map groups by key for primary/secondary
+    const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
+    const secondaryGroups = Object.fromEntries((j.results?.secondary?.groups || []).map(g=>[g.key, g]));
 
-    for (const key of order){
-      const g = map[key];
-      if (g) renderGroup(g);
-      await new Promise(r=>setTimeout(r, 160));
+    for(const key of GROUP_ORDER){
+      const gp = primaryGroups[key] || null;
+      const gs = (j.results?.secondary ? (secondaryGroups[key] || null) : null);
+      renderGroup(key, gp, gs);
+      await new Promise(r=>setTimeout(r, 120));
     }
 
-    setLoaderText("Done!");
-    await new Promise(r=>setTimeout(r, 300));
+    setLoaderText("تموم شد ✅");
+    await new Promise(r=>setTimeout(r, 260));
     hideLoader();
 
   } catch(e){
     stop();
-    bar.style.width = '100%';
-    setLoaderText("Network Error.");
-    await new Promise(r=>setTimeout(r, 420));
+    bar.style.width = "100%";
     hideLoader();
-    alert("ارتباط با سرور برقرار نشد");
+    showError("نت وصل نشد به سرور 😬 یه بار دیگه بزن تست رو.");
   }
 
-  setTimeout(()=>btn.disabled=false, 450);
+  setTimeout(()=>btn.disabled=false, 350);
 };
 </script>
 </body>
