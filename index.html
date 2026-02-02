@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>گیم رنتر | تست DNS</title>
 
 <style>
@@ -30,6 +30,7 @@
   --red2:#fb7185;
   --ok:#22c55e;
   --bad:#ef4444;
+  --panel:#0b1022;
 }
 
 *{ box-sizing:border-box; font-family:"YekanBakh", system-ui, sans-serif; }
@@ -40,40 +41,46 @@ body{
   background:
     radial-gradient(900px 500px at 10% 0%, rgba(225,29,72,.18), transparent 45%),
     radial-gradient(900px 500px at 90% 10%, rgba(251,113,133,.10), transparent 50%),
-    radial-gradient(1200px 700px at 50% 110%, rgba(34,197,94,.08), transparent 50%),
+    radial-gradient(1200px 700px at 50% 110%, rgba(34,197,94,.06), transparent 50%),
     var(--bg);
 }
 
-.container{ min-height:100vh; display:grid; place-items:center; padding:24px; }
+.container{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:16px;
+}
 
 .card{
   width:100%;
-  max-width:780px;
-  border-radius:26px;
-  background:linear-gradient(180deg, rgba(18,24,43,.9), rgba(14,20,39,.9));
-  border:1px solid rgba(27,36,68,.9);
+  max-width:560px;            /* موبایل محور */
+  border-radius:22px;
+  background:linear-gradient(180deg, rgba(18,24,43,.92), rgba(14,20,39,.92));
+  border:1px solid rgba(27,36,68,.92);
   box-shadow:
     0 24px 80px rgba(0,0,0,.65),
-    0 0 0 1px rgba(225,29,72,.12) inset,
-    0 0 60px rgba(225,29,72,.08);
-  padding:26px;
+    0 0 0 1px rgba(225,29,72,.10) inset,
+    0 0 50px rgba(225,29,72,.06);
+  padding:18px;
   position:relative;
   overflow:hidden;
 }
+
 .card:before{
   content:"";
   position:absolute; inset:-2px;
-  background:radial-gradient(600px 220px at 50% 0%, rgba(225,29,72,.22), transparent 60%);
+  background:radial-gradient(600px 220px at 50% 0%, rgba(225,29,72,.20), transparent 60%);
   pointer-events:none;
 }
 .card:after{
   content:"";
-  position:absolute; inset:-40%;
+  position:absolute; inset:-45%;
   background:
-    radial-gradient(600px 260px at 20% 15%, rgba(225,29,72,.22), transparent 60%),
-    radial-gradient(500px 240px at 85% 25%, rgba(251,113,133,.18), transparent 65%),
-    radial-gradient(700px 320px at 55% 90%, rgba(225,29,72,.10), transparent 60%),
-    linear-gradient(120deg, rgba(225,29,72,.12), transparent 40%, rgba(251,113,133,.10));
+    radial-gradient(600px 260px at 20% 15%, rgba(225,29,72,.18), transparent 60%),
+    radial-gradient(500px 240px at 85% 25%, rgba(251,113,133,.16), transparent 65%),
+    radial-gradient(700px 320px at 55% 90%, rgba(225,29,72,.08), transparent 60%),
+    linear-gradient(120deg, rgba(225,29,72,.10), transparent 40%, rgba(251,113,133,.08));
   filter: blur(18px);
   opacity:.75;
   mix-blend-mode: screen;
@@ -87,85 +94,56 @@ body{
   100%{transform:translate3d(-2%,-2%,0) scale(1)}
 }
 
-.card .noise, .card .scanlines{ position:absolute; inset:0; pointer-events:none; z-index:1; }
-.card .scanlines{
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(255,255,255,.045),
-    rgba(255,255,255,.045) 1px,
-    transparent 1px,
-    transparent 6px
-  );
-  opacity:.10;
-  mix-blend-mode: overlay;
-}
-.card .noise{
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
-  opacity:.08;
-  mix-blend-mode: overlay;
-  animation: noiseMove .35s steps(2) infinite;
-}
-@keyframes noiseMove{
-  0%{ transform: translate(0,0); }
-  25%{ transform: translate(-2%, 1%); }
-  50%{ transform: translate(1%, -2%); }
-  75%{ transform: translate(-1%, -1%); }
-  100%{ transform: translate(0,0); }
+.header, label, .inputs, .helper, button, .progress, .grid, .footer, .errorBox, .loader{
+  position:relative; z-index:2;
 }
 
-/* keep content above effects */
-.header, label, .inputs, .helper, button, .progress, .grid, .footer, .errorBox, .loader{ position:relative; z-index:2; }
-
-/* ===== Header: right aligned (same edge as button) ===== */
+/* ===== Header: centered (mobile-first) ===== */
 .header{
   display:flex;
-  justify-content:flex-end;
-  align-items:flex-start;
-  margin-bottom:14px;
-}
-.brandRight{
-  display:flex;
   flex-direction:column;
-  align-items:flex-end;
-  gap:8px;
+  align-items:center;
+  gap:10px;
+  padding-top:6px;
+  padding-bottom:8px;
 }
-.brandRight img{
-  width:120px;
+.header img{
+  width:110px;
   height:auto;
   display:block;
-  filter:drop-shadow(0 14px 30px rgba(225,29,72,.38));
+  filter:drop-shadow(0 14px 30px rgba(225,29,72,.34));
 }
-.brandName{
+.header .brandName{
   font-weight:700;
   font-size:16px;
   line-height:1.2;
 }
 
-label{ display:block; color:var(--muted); font-size:14px; margin:12px 0 8px; }
+/* ===== Form ===== */
+label{ display:block; color:var(--muted); font-size:13px; margin:10px 0 8px; }
 
 .inputs{
   display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:12px;
-}
-@media (max-width: 640px){
-  .inputs{ grid-template-columns: 1fr; }
-  .brandRight img{ width:96px; }
+  grid-template-columns: 1fr;
+  gap:10px;
 }
 
 .inputWrap{ position:relative; }
 input{
   width:100%;
-  padding:14px 16px;
+  padding:14px 14px;
   border-radius:16px;
   border:1px solid rgba(27,36,68,.95);
-  background:rgba(11,16,34,.9);
+  background:rgba(11,16,34,.92);
   color:var(--text);
-  font-size:16px;
+  font-size:15px;
   outline:none;
-  transition:.25s;
+  transition:.2s;
 }
-input:focus{ border-color:rgba(225,29,72,.9); box-shadow:0 0 0 4px rgba(225,29,72,.18); }
+input:focus{
+  border-color:rgba(225,29,72,.92);
+  box-shadow:0 0 0 4px rgba(225,29,72,.18);
+}
 
 .helper{
   margin-top:8px;
@@ -174,28 +152,29 @@ input:focus{ border-color:rgba(225,29,72,.9); box-shadow:0 0 0 4px rgba(225,29,7
   line-height: 1.9;
 }
 
+/* ===== Button ===== */
 button{
   width:100%;
-  margin-top:14px;
-  padding:14px 16px;
+  margin-top:12px;
+  padding:14px 14px;
   border-radius:18px;
   border:none;
   color:white;
-  font-size:16px;
+  font-size:15px;
   cursor:pointer;
   background:linear-gradient(135deg, var(--red), var(--red2));
-  box-shadow:0 12px 30px rgba(225,29,72,.25);
-  transition:.25s;
+  box-shadow:0 12px 30px rgba(225,29,72,.22);
+  transition:.2s;
   font-weight:700;
 }
 button:hover{ transform:translateY(-1px) }
 button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 
 .progress{
-  margin-top:14px;
+  margin-top:12px;
   height:10px;
   border-radius:999px;
-  background:rgba(11,16,34,.9);
+  background:rgba(11,16,34,.92);
   border:1px solid rgba(27,36,68,.95);
   overflow:hidden;
 }
@@ -207,13 +186,13 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   transition:width .35s cubic-bezier(.2,.8,.2,1);
 }
 
-/* error box */
+/* ===== Error ===== */
 .errorBox{
-  margin-top:12px;
-  padding:12px 14px;
+  margin-top:10px;
+  padding:12px 12px;
   border-radius:16px;
-  border:1px dashed rgba(239,68,68,.6);
-  background: rgba(11,16,34,.85);
+  border:1px dashed rgba(239,68,68,.62);
+  background: rgba(11,16,34,.90);
   color:#fee2e2;
   font-size:13px;
   display:none;
@@ -221,36 +200,39 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 }
 .errorBox.show{ display:block; }
 
-/* cards */
+/* ===== Cards: mobile-first single column ===== */
 .grid{
-  margin-top:16px;
+  margin-top:14px;
   display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap:12px;
-}
-@media (max-width: 640px){
-  .grid{ grid-template-columns: 1fr; }
+  grid-template-columns: 1fr;
+  gap:10px;
 }
 
 .box{
-  background: rgba(11,16,34,.9);
+  background: rgba(11,16,34,.92);
   border:1px solid rgba(27,36,68,.95);
   border-radius:18px;
-  padding:14px;
-  transition:.25s;
+  padding:12px;
+  transition:.2s;
   overflow:hidden;
 }
+.box.ok{ border-color: rgba(34,197,94,.55); box-shadow: 0 0 0 3px rgba(34,197,94,.08); }
+.box.fail{ border-color: rgba(239,68,68,.55); box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
+.box.testing{ border-color: rgba(225,29,72,.35); box-shadow: 0 0 0 3px rgba(225,29,72,.06); }
+
 .boxHead{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+  display:grid;
+  grid-template-columns: 1fr auto; /* عنوان + وضعیت */
   gap:10px;
+  align-items:center;
 }
+
 .boxTitle{
-  display:flex;
-  align-items:center;
+  display:grid;
+  grid-template-columns: 34px 1fr;
   gap:10px;
-  font-weight:700;
+  align-items:center;
+  min-height:34px;
 }
 .icon{
   width:34px; height:34px;
@@ -259,47 +241,65 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   border:1px solid rgba(27,36,68,.85);
   background: rgba(7,10,18,.35);
 }
+.boxTitleText{
+  font-weight:700;
+  font-size:14px;       /* همه کارت‌ها یک اندازه */
+  line-height:1.3;
+}
+
 .state{
   display:flex;
-  align-items:center;
-  gap:10px;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:6px;
   font-size:12px;
   color: var(--muted);
-  flex-wrap:wrap;
-  justify-content:flex-end;
+  min-width: 120px;
 }
+
+.stateTop{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
 .light{
   width:10px; height:10px; border-radius:50%;
   background: rgba(156,163,175,.45);
-  transition:.25s;
-}
-.badges{ display:flex; gap:8px; align-items:center; }
-.pill{
-  font-size:11px;
-  padding:3px 8px;
-  border-radius:999px;
-  border:1px solid rgba(27,36,68,.8);
-  background: rgba(7,10,18,.35);
-  color: var(--muted);
+  transition:.2s;
 }
 
-.box.ok{ border-color: rgba(34,197,94,.55); box-shadow: 0 0 0 3px rgba(34,197,94,.10); }
-.box.ok .light{ background: var(--ok); box-shadow: 0 0 18px rgba(34,197,94,.55); }
-.box.fail{ border-color: rgba(239,68,68,.55); box-shadow: 0 0 0 3px rgba(239,68,68,.10); }
-.box.fail .light{ background: var(--bad); box-shadow: 0 0 18px rgba(239,68,68,.55); }
-.box.testing{ border-color: rgba(225,29,72,.35); box-shadow: 0 0 0 3px rgba(225,29,72,.08); }
 .box.testing .light{
   background: linear-gradient(180deg, var(--red), var(--red2));
-  box-shadow: 0 0 18px rgba(225,29,72,.45);
+  box-shadow: 0 0 16px rgba(225,29,72,.45);
   animation: blink 1s ease-in-out infinite;
 }
+.box.ok .light{ background: var(--ok); box-shadow: 0 0 16px rgba(34,197,94,.45); }
+.box.fail .light{ background: var(--bad); box-shadow: 0 0 16px rgba(239,68,68,.45); }
+
 @keyframes blink{
   0%,100%{ opacity:.55; transform:scale(.92); }
   50%{ opacity:1; transform:scale(1); }
 }
 
-/* expand/collapse */
-.actions{ margin-top:12px; }
+.badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  justify-content:flex-end;
+}
+.pill{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:999px;
+  border:1px solid rgba(27,36,68,.82);
+  background: rgba(7,10,18,.35);
+  color: var(--muted);
+  white-space:nowrap;
+}
+
+/* expand */
+.actions{ margin-top:10px; }
 .toggleBtn{
   width:100%;
   border:none;
@@ -329,7 +329,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 }
 .box.expanded .details{ display:block; }
 
-/* domain list inside details */
 .dBlock{
   margin-top:10px;
   padding:10px 10px;
@@ -365,6 +364,10 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   color: var(--text);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size:12px;
+  max-width: 68%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 .dTag{
   font-size:11px;
@@ -373,11 +376,12 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   border:1px solid rgba(27,36,68,.8);
   background: rgba(7,10,18,.35);
   color: var(--muted);
+  white-space:nowrap;
 }
 .dTag.ok{ border-color: rgba(34,197,94,.55); color:#d1fae5; }
 .dTag.fail{ border-color: rgba(239,68,68,.55); color:#fee2e2; }
 
-/* ===== loader (CSS spinner) ===== */
+/* ===== Loader ===== */
 .loader{
   position:absolute;
   inset:0;
@@ -399,13 +403,11 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   border:1px solid rgba(225,29,72,.28);
   background: rgba(11,16,34,.62);
   box-shadow: 0 18px 80px rgba(0,0,0,.6);
-  position:relative;
-  overflow:hidden;
 }
 
 .spinner{
-  width:120px;
-  height:120px;
+  width:110px;
+  height:110px;
   margin: 6px auto 10px;
   position:relative;
   display:grid;
@@ -441,7 +443,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 }
 @keyframes spin{ to{ transform: rotate(360deg); } }
 
-.loaderTitle{ font-weight:700; font-size:16px; margin-top:4px; }
+.loaderTitle{ font-weight:700; font-size:15px; margin-top:4px; }
 .loaderStep{ margin-top:6px; color:var(--muted); font-size:13px; line-height:1.8; }
 
 .footer{
@@ -458,9 +460,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 <div class="container">
   <div class="card">
 
-    <div class="noise"></div>
-    <div class="scanlines"></div>
-
     <div class="loader" id="loader">
       <div class="loaderBox">
         <div class="spinner" aria-hidden="true"></div>
@@ -469,25 +468,26 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       </div>
     </div>
 
-    <!-- Header (right only) -->
+    <!-- Header -->
     <div class="header">
-      <div class="brandRight">
-        <img src="logo.png" alt="Game Renter">
-        <div class="brandName">گیم رنتر</div>
-      </div>
+      <img src="logo.png" alt="Game Renter">
+      <div class="brandName">گیم رنتر</div>
     </div>
 
     <label>DNS را وارد کنید (DNS دوم اختیاری است)</label>
     <div class="inputs">
       <div class="inputWrap">
-        <input id="primary" placeholder="DNS پرایمری (مثلاً 8.8.8.8 یا ۸.۸.۸.۸)">
+        <input id="primary" inputmode="decimal" autocomplete="off"
+               placeholder="DNS پرایمری (مثل 8.8.8.8 یا ۸.۸.۸.۸)">
       </div>
       <div class="inputWrap">
-        <input id="secondary" placeholder="DNS سکندری (اختیاری)">
+        <input id="secondary" inputmode="decimal" autocomplete="off"
+               placeholder="DNS سکندری (اختیاری)">
       </div>
     </div>
+
     <div class="helper">
-      اگر فقط یکی وارد شود، همان تست می‌شود. اگر هر دو وارد شوند، هر دو DNS به‌صورت جداگانه بررسی می‌شوند.
+      اگر فقط یکی وارد شود، همان تست می‌شود. اگر هر دو وارد شوند، هر دو DNS جداگانه بررسی می‌شوند.
     </div>
 
     <button id="btn">شروع تست</button>
@@ -499,7 +499,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     <div class="grid" id="grid"></div>
 
     <div class="footer">
-      نتیجه‌ها بر اساس Resolve شدن دامنه‌های کلیدی هر سرویس است. ممکن است بسته به اینترنت/منطقه هم فرق کند.
+      نتیجه‌ها بر اساس Resolve شدن دامنه‌های کلیدی هر سرویس است و ممکن است با اینترنت/منطقه فرق کند.
     </div>
 
   </div>
@@ -561,10 +561,12 @@ function friendlyError(apiError){
   switch(apiError){
     case "invalid_primary":
       return "DNS پرایمری درست وارد نشده. نمونه: 8.8.8.8 یا ۱.۱.۱.۱";
+    case "invalid_secondary":
+      return "DNS سکندری درست وارد نشده. می‌توانید خالی بگذارید.";
     case "private_primary":
       return "DNS پرایمری خصوصی/لوکال است. بهتر است یک DNS عمومی وارد کنید (مثل 1.1.1.1).";
     case "private_secondary":
-      return "DNS سکندری خصوصی/لوکال است. اگر می‌خواهید وارد کنید، بهتر است عمومی باشد.";
+      return "DNS سکندری خصوصی/لوکال است. اگر وارد می‌کنید، بهتر است عمومی باشد.";
     case "same_dns":
       return "DNS پرایمری و سکندری یکی هستند؛ وارد کردن یکی کافی است.";
     case "server_error":
@@ -574,23 +576,39 @@ function friendlyError(apiError){
   }
 }
 
+/* کوتاه‌سازی فقط برای نمایش (تست با دامنه کامل انجام می‌شود) */
+function shortenDomain(d){
+  d = String(d || "");
+  if(d.length <= 26) return d;
+  const start = d.slice(0, 12);
+  const end = d.slice(-10);
+  return `${start}…${end}`;
+}
+
 function buildCards(templateGroups){
   grid.innerHTML = templateGroups.map(g => `
     <div class="box testing" id="box-${g.key}">
       <div class="boxHead">
-        <div class="boxTitle"><span class="icon">${g.icon}</span>${g.title}</div>
+        <div class="boxTitle">
+          <span class="icon">${g.icon}</span>
+          <div class="boxTitleText">${g.title}</div>
+        </div>
         <div class="state">
-          <span class="light"></span>
-          <span id="state-${g.key}">آماده</span>
-          <span class="badges">
+          <div class="stateTop">
+            <span class="light"></span>
+            <span id="state-${g.key}">آماده</span>
+          </div>
+          <div class="badges">
             <span class="pill" id="p-${g.key}">پرایمری: -</span>
             <span class="pill" id="s-${g.key}">سکندری: -</span>
-          </span>
+          </div>
         </div>
       </div>
+
       <div class="actions">
         <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات بیشتر</button>
       </div>
+
       <div class="details" id="details-${g.key}">
         هنوز تست انجام نشده است.
       </div>
@@ -649,9 +667,10 @@ function renderDnsBlock(label, g){
   const items = (g.items || []).map(it=>{
     const tagCls = it.ok ? "ok" : "fail";
     const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
+    const shown = shortenDomain(it.domain);
     return `
       <div class="dItem">
-        <div class="domain">${it.domain}</div>
+        <div class="domain" title="${it.domain}">${shown}</div>
         <span class="dTag ${tagCls}">${tagTxt}</span>
       </div>
     `;
@@ -716,11 +735,11 @@ btn.onclick = async ()=>{
     return;
   }
   if(s && !looksLikeIp(s)){
-    showError("DNS سکندری معتبر نیست. یا خالی بگذارید، یا درست وارد کنید (مثل 1.1.1.1).");
+    showError("DNS سکندری معتبر نیست. اگر نیاز ندارید، خالی بگذارید.");
     return;
   }
   if(s && s === p){
-    showError("DNS پرایمری و سکندری یکسان هستند؛ وارد کردن یکی کافی است.");
+    showError("DNS پرایمری و سکندری یکی هستند؛ وارد کردن یکی کافی است.");
     return;
   }
 
@@ -761,7 +780,7 @@ btn.onclick = async ()=>{
       const gp = primaryGroups[key] || null;
       const gs = (j.results?.secondary ? (secondaryGroups[key] || null) : null);
       renderGroup(key, gp, gs);
-      await new Promise(r=>setTimeout(r, 110));
+      await new Promise(r=>setTimeout(r, 120));
     }
 
     setLoaderText("تست کامل شد ✅");
