@@ -30,7 +30,6 @@
   --red2:#fb7185;
   --ok:#22c55e;
   --bad:#ef4444;
-  --panel:#0b1022;
 }
 
 *{ box-sizing:border-box; font-family:"YekanBakh", system-ui, sans-serif; }
@@ -120,36 +119,51 @@ body{
 /* keep content above effects */
 .header, label, .inputs, button, .progress, .grid, .footer, .errorBox{ position:relative; z-index:2; }
 
-/* --- Header aligned with inputs/button --- */
+/* --- Header: logo on the right, name under it --- */
 .header{
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   justify-content:space-between;
   gap:14px;
   margin-bottom:14px;
 }
-.headerTitle{
+.brandRight{
   display:flex;
-  align-items:center;
-  gap:10px;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:8px;
+  min-width:140px;
 }
-.title{
-  margin:0;
-  font-size:22px;
-  font-weight:700;
-  letter-spacing:.2px;
-}
-.headerLogo{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.headerLogo img{
-  width:110px;     /* بزرگ‌تر، بدون انیمیشن */
+.brandRight img{
+  width:120px;
   height:auto;
   filter:drop-shadow(0 14px 30px rgba(225,29,72,.38));
 }
+.brandName{
+  font-weight:700;
+  font-size:16px;
+  line-height:1.2;
+}
 
+.headerLeft{
+  flex:1;
+  display:flex;
+  align-items:flex-start;
+  justify-content:flex-start;
+  padding-top:8px;
+}
+.headerLeftText{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.9;
+}
+
+@media (max-width: 640px){
+  .brandRight img{ width:96px; }
+  .brandRight{ min-width:110px; }
+}
+
+/* inputs */
 label{ display:block; color:var(--muted); font-size:14px; margin:12px 0 8px; }
 
 .inputs{
@@ -159,7 +173,6 @@ label{ display:block; color:var(--muted); font-size:14px; margin:12px 0 8px; }
 }
 @media (max-width: 640px){
   .inputs{ grid-template-columns: 1fr; }
-  .headerLogo img{ width:96px; }
 }
 
 .inputWrap{ position:relative; }
@@ -249,14 +262,12 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   transition:.25s;
   overflow:hidden;
 }
-
 .boxHead{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:10px;
 }
-
 .boxTitle{
   display:flex;
   align-items:center;
@@ -270,7 +281,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   border:1px solid rgba(27,36,68,.85);
   background: rgba(7,10,18,.35);
 }
-
 .state{
   display:flex;
   align-items:center;
@@ -311,7 +321,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   50%{ opacity:1; transform:scale(1); }
 }
 
-/* Expand/Collapse button full-width aligned */
 .actions{ margin-top:12px; }
 .toggleBtn{
   width:100%;
@@ -342,7 +351,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 }
 .box.expanded .details{ display:block; }
 
-/* domain list inside details */
 .dBlock{
   margin-top:10px;
   padding:10px 10px;
@@ -415,7 +423,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   position:relative;
   overflow:hidden;
 }
-
 .spinner{
   width:120px;
   height:120px;
@@ -452,7 +459,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   border:1px solid rgba(255,255,255,.06);
   box-shadow: 0 0 0 1px rgba(225,29,72,.10) inset;
 }
-
 @keyframes spin{ to{ transform: rotate(360deg); } }
 
 .loaderTitle{ font-weight:700; font-size:16px; margin-top:4px; }
@@ -483,12 +489,17 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       </div>
     </div>
 
+    <!-- Header -->
     <div class="header">
-      <div class="headerTitle">
-        <h1 class="title">گیم رنتر</h1>
-      </div>
-      <div class="headerLogo">
+      <div class="brandRight">
         <img src="logo.png" alt="Game Renter">
+        <div class="brandName">گیم رنتر</div>
+      </div>
+
+      <div class="headerLeft">
+        <div class="headerLeftText">
+          DNS را وارد کنید تا ببینید روی سرورهای Xbox و PlayStation و چند سرویس مهم دیگر کار می‌کند یا نه.
+        </div>
       </div>
     </div>
 
