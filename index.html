@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Game Renter | DNS Test</title>
+<title>گیم رنتر | تست DNS</title>
 
 <style>
 @font-face{
@@ -120,27 +120,37 @@ body{
 /* keep content above effects */
 .header, label, .inputs, button, .progress, .grid, .footer, .errorBox{ position:relative; z-index:2; }
 
+/* --- Header aligned with inputs/button --- */
 .header{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:14px;
-  margin-bottom:18px;
+  margin-bottom:14px;
 }
-.brand{
+.headerTitle{
   display:flex;
   align-items:center;
-  gap:14px;
+  gap:10px;
 }
-.brand img{
-  width:132px; /* بزرگ‌تر */
+.title{
+  margin:0;
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:.2px;
+}
+.headerLogo{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.headerLogo img{
+  width:110px;     /* بزرگ‌تر، بدون انیمیشن */
   height:auto;
   filter:drop-shadow(0 14px 30px rgba(225,29,72,.38));
 }
-.title{ margin:0; font-size:22px; font-weight:700; letter-spacing:.2px; }
-.sub{ color:var(--muted); font-size:13px; margin-top:4px; line-height:1.8; }
 
-label{ display:block; color:var(--muted); font-size:14px; margin:10px 0 8px; }
+label{ display:block; color:var(--muted); font-size:14px; margin:12px 0 8px; }
 
 .inputs{
   display:grid;
@@ -149,6 +159,7 @@ label{ display:block; color:var(--muted); font-size:14px; margin:10px 0 8px; }
 }
 @media (max-width: 640px){
   .inputs{ grid-template-columns: 1fr; }
+  .headerLogo img{ width:96px; }
 }
 
 .inputWrap{ position:relative; }
@@ -238,12 +249,14 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   transition:.25s;
   overflow:hidden;
 }
+
 .boxHead{
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:10px;
 }
+
 .boxTitle{
   display:flex;
   align-items:center;
@@ -257,6 +270,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   border:1px solid rgba(27,36,68,.85);
   background: rgba(7,10,18,.35);
 }
+
 .state{
   display:flex;
   align-items:center;
@@ -297,22 +311,25 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   50%{ opacity:1; transform:scale(1); }
 }
 
-/* expand/collapse */
-.actions{
-  margin-top:10px;
-  display:flex;
-  justify-content:flex-end;
-}
+/* Expand/Collapse button full-width aligned */
+.actions{ margin-top:12px; }
 .toggleBtn{
+  width:100%;
   border:none;
-  background:transparent;
-  color: rgba(251,113,133,.95);
-  font-size:12px;
   cursor:pointer;
-  padding:6px 8px;
-  border-radius:10px;
+  padding:10px 12px;
+  border-radius:14px;
+  background: rgba(7,10,18,.35);
+  border: 1px solid rgba(27,36,68,.75);
+  color: rgba(251,113,133,.98);
+  font-size:12px;
+  font-weight:700;
+  transition:.2s;
 }
-.toggleBtn:hover{ background: rgba(225,29,72,.10); }
+.toggleBtn:hover{
+  border-color: rgba(225,29,72,.55);
+  box-shadow: 0 0 0 3px rgba(225,29,72,.10);
+}
 
 .details{
   margin-top:10px;
@@ -373,7 +390,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 .dTag.ok{ border-color: rgba(34,197,94,.55); color:#d1fae5; }
 .dTag.fail{ border-color: rgba(239,68,68,.55); color:#fee2e2; }
 
-/* loader (CSS spinner like your gif) */
+/* loader spinner */
 .loader{
   position:absolute;
   inset:0;
@@ -461,22 +478,21 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     <div class="loader" id="loader">
       <div class="loaderBox">
         <div class="spinner" aria-hidden="true"></div>
-        <div class="loaderTitle">Game Renter</div>
+        <div class="loaderTitle">گیم رنتر</div>
         <div class="loaderStep" id="loaderText">در حال آماده‌سازی هستیم…</div>
       </div>
     </div>
 
     <div class="header">
-      <div class="brand">
+      <div class="headerTitle">
+        <h1 class="title">گیم رنتر</h1>
+      </div>
+      <div class="headerLogo">
         <img src="logo.png" alt="Game Renter">
-        <div>
-          <h1 class="title">Game Renter</h1>
-          <div class="sub">تست DNS برای Xbox / PlayStation + داخلی/بین‌المللی</div>
-        </div>
       </div>
     </div>
 
-    <label>DNS را وارد کنید (وارد کردن DNS دوم اختیاری است)</label>
+    <label>DNS را وارد کنید (DNS دوم اختیاری است)</label>
     <div class="inputs">
       <div class="inputWrap">
         <input id="primary" placeholder="DNS پرایمری (مثلاً 8.8.8.8 یا ۸.۸.۸.۸)">
@@ -498,8 +514,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     <div class="grid" id="grid"></div>
 
     <div class="footer">
-      این تست فقط بررسی می‌کند DNS بتواند دامنه‌های کلیدی هر سرویس را Resolve کند.
-      نتیجه نهایی ممکن است به ISP/منطقه هم وابسته باشد.
+      این تست فقط بررسی می‌کند DNS بتواند دامنه‌های کلیدی هر سرویس را Resolve کند. نتیجه نهایی ممکن است به ISP/منطقه هم وابسته باشد.
     </div>
 
   </div>
@@ -560,17 +575,17 @@ function fakeProgress(){
 function friendlyError(apiError){
   switch(apiError){
     case "invalid_primary":
-      return "DNS پرایمری درست نیست. نمونه: 8.8.8.8 یا ۱.۱.۱.۱";
+      return "DNS پرایمری درست وارد نشده. نمونه: 8.8.8.8 یا ۱.۱.۱.۱";
     case "private_primary":
-      return "DNS پرایمری در بازه خصوصی/لوکال است. لطفاً یک DNS عمومی وارد کنید (مثل 1.1.1.1).";
+      return "DNS پرایمری در بازه خصوصی/لوکال است. بهتر است یک DNS عمومی وارد کنید (مثل 1.1.1.1).";
     case "private_secondary":
-      return "DNS سکندری در بازه خصوصی/لوکال است. اگر نیاز دارید، یک DNS عمومی وارد کنید.";
+      return "DNS سکندری در بازه خصوصی/لوکال است. اگر می‌خواهید وارد کنید، بهتر است عمومی باشد.";
     case "same_dns":
       return "DNS پرایمری و سکندری یکسان هستند؛ وارد کردن یکی کافی است.";
     case "server_error":
-      return "مشکلی در سمت سرور رخ داد. لطفاً دوباره امتحان کنید.";
+      return "مشکلی در سمت سرور پیش آمد. لطفاً دوباره امتحان کنید.";
     default:
-      return "خطایی رخ داد. لطفاً دوباره امتحان کنید.";
+      return "یک خطا رخ داد. لطفاً دوباره امتحان کنید.";
   }
 }
 
@@ -583,14 +598,16 @@ function buildCards(templateGroups){
           <span class="light"></span>
           <span id="state-${g.key}">آماده</span>
           <span class="badges">
-            <span class="pill" id="p-${g.key}">P: -</span>
-            <span class="pill" id="s-${g.key}">S: -</span>
+            <span class="pill" id="p-${g.key}">پرایمری: -</span>
+            <span class="pill" id="s-${g.key}">سکندری: -</span>
           </span>
         </div>
       </div>
+
       <div class="actions">
         <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات بیشتر</button>
       </div>
+
       <div class="details" id="details-${g.key}">
         هنوز تست انجام نشده است.
       </div>
@@ -618,15 +635,17 @@ function buildCards(templateGroups){
 function setAllTesting(){
   bar.style.width = "0%";
   clearError();
+
   document.querySelectorAll(".box").forEach(b=>{
     b.classList.remove("ok","fail","expanded");
     b.classList.add("testing");
   });
+
   GROUP_ORDER.forEach(k=>{
     const st = document.getElementById(`state-${k}`);
     if(st) st.textContent = "در حال تست…";
-    const p = document.getElementById(`p-${k}`); if(p) p.textContent = "P: …";
-    const s = document.getElementById(`s-${k}`); if(s) s.textContent = "S: …";
+    const p = document.getElementById(`p-${k}`); if(p) p.textContent = "پرایمری: …";
+    const s = document.getElementById(`s-${k}`); if(s) s.textContent = "سکندری: …";
     const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال دریافت نتیجه…";
   });
 }
@@ -680,8 +699,8 @@ function renderGroup(key, gp, gs){
 
   stateEl.textContent = overallOk ? "قابل استفاده ✅" : "مشکل دارد ❌";
 
-  pEl.textContent = gp ? `P: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "P: -";
-  sEl.textContent = gs ? `S: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : "S: -";
+  pEl.textContent = gp ? `پرایمری: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "پرایمری: -";
+  sEl.textContent = gs ? `سکندری: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : "سکندری: -";
 
   details.innerHTML = `
     ${renderDnsBlock("DNS پرایمری", gp)}
@@ -728,7 +747,6 @@ btn.onclick = async ()=>{
   const stop = fakeProgress();
 
   try{
-    // متن‌های مرحله‌ای (با دستور زبان درست)
     setLoaderText("در حال تست سرورهای Xbox هستیم…");
     await new Promise(r=>setTimeout(r, 220));
     setLoaderText("در حال تست سرورهای PlayStation هستیم…");
