@@ -698,7 +698,8 @@ function setAllTesting(){
 }
 
 function renderDnsBlock(label, g){
-  if(!g){
+  // وقتی DNS وارد نشده (secondary خالی بوده)
+  if(g === null){
     return `
       <div class="dBlock">
         <div class="dTitle">
@@ -708,6 +709,43 @@ function renderDnsBlock(label, g){
       </div>
     `;
   }
+
+  // وقتی DNS هست ولی هیچ پاسخی نگرفتیم / مشکل داشته
+  if(g === undefined){
+    return `
+      <div class="dBlock">
+        <div class="dTitle">
+          <span>${label}</span>
+          <span class="dMeta">پاسخی دریافت نشد</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // حالت عادی: نتیجه داریم
+  const meta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
+  const items = (g.items || []).map(it=>{
+    const tagCls = it.ok ? "ok" : "fail";
+    const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
+    const shown = shortenDomain(it.domain);
+    return `
+      <div class="dItem">
+        <div class="domain" title="${it.domain}">${shown}</div>
+        <span class="dTag ${tagCls}">${tagTxt}</span>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="dBlock">
+      <div class="dTitle">
+        <span>${label}</span>
+        <span class="dMeta">${meta}</span>
+      </div>
+      ${items}
+    </div>
+  `;
+}
 
   const meta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
   const items = (g.items || []).map(it=>{
