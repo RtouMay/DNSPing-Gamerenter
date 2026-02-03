@@ -36,15 +36,26 @@ function isPrivateIPv4(ip) {
   return false;
 }
 
+// تایم‌اوت برای هر دامنه (ms) تا تست گیر نکنه
+const PER_DOMAIN_TIMEOUT_MS = 3500;
+
+function withTimeout(promise, ms) {
+  let t;
+  const timeout = new Promise((_, reject) => {
+    t = setTimeout(() => reject(new Error("TIMEOUT")), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(t));
+}
+
 async function resolveOnce(resolver, domain) {
   const start = Date.now();
   try {
-    // A record is enough for our "works/doesn't work" check
-    await resolver.resolve4(domain);
+    await withTimeout(resolver.resolve4(domain), PER_DOMAIN_TIMEOUT_MS);
     const ms = Date.now() - start;
-    return { domain, ok: true, ms };
+    return { domain, ok: true, ms, err: null };
   } catch (e) {
-    return { domain, ok: false, ms: null };
+    const code = (e && e.code) ? e.code : (e && e.message) ? e.message : "FAIL";
+    return { domain, ok: false, ms: null, err: code };
   }
 }
 
@@ -57,8 +68,12 @@ function avgMs(items) {
 
 function groupStatus(items){
   const okCount = items.filter(x=>x.ok).length;
-  if(okCount === 0) return "fail";
-  return "ok";
+  return okCount === 0 ? "fail" : "ok";
+}
+
+function allFailed(groups){
+  const totalOk = groups.reduce((acc,g)=>acc + (g.okCount || 0), 0);
+  return totalOk === 0;
 }
 
 const GROUPS = [
@@ -89,57 +104,24 @@ const GROUPS = [
     key: "games",
     title: "سرور بازی‌های پرطرفدار",
     domains: [
-      // EA / FC / Battlefield / Apex
-      "ea.com",
-      "help.ea.com",
-      "easports.com",
-      "origin.com",
-      "apexlegends.com",
-      "battlefield.com",
-
-      // Call of Duty / Activision / Battle.net
-      "callofduty.com",
-      "activision.com",
-      "battle.net",
-
-      // Epic / Fortnite
-      "epicgames.com",
-      "fortnite.com",
-
-      // Riot / Valorant / LoL
-      "riotgames.com",
-      "playvalorant.com",
-      "leagueoflegends.com",
-
-      // Steam
-      "steampowered.com",
-      "steamcommunity.com",
-
-      // Ubisoft / Rainbow Six
-      "ubisoft.com",
-      "rainbow6.com",
+      "ea.com","help.ea.com","easports.com","origin.com",
+      "apexlegends.com","battlefield.com",
+      "callofduty.com","activision.com","battle.net",
+      "epicgames.com","fortnite.com",
+      "riotgames.com","playvalorant.com","leagueoflegends.com",
+      "steampowered.com","steamcommunity.com",
+      "ubisoft.com","rainbow6.com",
     ],
   },
   {
     key: "international",
     title: "سرورهای بین‌المللی",
-    domains: [
-      "google.com",
-      "cloudflare.com",
-      "github.com",
-      "microsoft.com",
-      "amazon.com",
-    ],
+    domains: ["google.com","cloudflare.com","github.com","microsoft.com","amazon.com"],
   },
   {
     key: "internal",
     title: "سرورهای داخلی",
-    domains: [
-      "aparat.com",
-      "digikala.com",
-      "divar.ir",
-      "rubika.ir",
-    ],
+    domains: ["aparat.com","digikala.com","divar.ir","rubika.ir"],
   },
 ];
 
@@ -149,12 +131,9 @@ export default async function handler(req, res) {
     const primary = normalizeDigits(u.searchParams.get("primary") || "");
     const secondary = normalizeDigits(u.searchParams.get("secondary") || "");
 
-    if (!primary || !isValidIPv4(primary)) {
-      return json(res, 400, { ok:false, error:"invalid_primary" });
-    }
-    if (isPrivateIPv4(primary)) {
-      return json(res, 400, { ok:false, error:"private_primary" });
-    }
+    if (!primary || !isValidIPv4(primary)) return json(res, 400, { ok:false, error:"invalid_primary" });
+    if (isPrivateIPv4(primary)) return json(res, 400, { ok:false, error:"private_primary" });
+
     if (secondary) {
       if (!isValidIPv4(secondary)) return json(res, 400, { ok:false, error:"invalid_secondary" });
       if (isPrivateIPv4(secondary)) return json(res, 400, { ok:false, error:"private_secondary" });
@@ -171,6 +150,7 @@ export default async function handler(req, res) {
         for (const d of g.domains) {
           items.push(await resolveOnce(resolver, d));
         }
+
         const okCount = items.filter(x=>x.ok).length;
         const total = items.length;
         const avg = avgMs(items);
@@ -186,7 +166,8 @@ export default async function handler(req, res) {
           items
         });
       }
-      return { groups };
+
+      return { groups, dnsOk: !allFailed(groups) };
     }
 
     const primaryResult = await runForDns(primary);
