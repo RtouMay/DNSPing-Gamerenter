@@ -35,10 +35,10 @@ function isPrivateIPv4(ip) {
   if (a === 0) return true;
   if (a === 192 && b === 168) return true;
   if (a === 172 && b >= 16 && b <= 31) return true;
+  // (می‌تونیم رنج‌های بیشتر هم اضافه کنیم)
   return false;
 }
 
-// تایم‌اوت برای هر دامنه (ms) تا تست گیر نکنه
 const PER_DOMAIN_TIMEOUT_MS = 3500;
 
 function withTimeout(promise, ms) {
@@ -79,9 +79,8 @@ function allFailed(groups) {
 }
 
 /**
- * اجرای همزمان با محدودیت کانکارنسی
- * - ترتیب خروجی حفظ می‌شود
- * - بدون dependency
+ * اجرای همزمان با محدودیت کانکارنسی (بدون dependency)
+ * ترتیب خروجی حفظ می‌شود.
  */
 async function mapWithConcurrency(items, limit, mapper) {
   const results = new Array(items.length);
@@ -99,17 +98,59 @@ async function mapWithConcurrency(items, limit, mapper) {
   return results;
 }
 
+/**
+ * تصمیم‌گیری Sampling:
+ * - گروه کوچک: همه
+ * - گروه بزرگ: اول sample (۳تا)
+ *    اگر خیلی خوب: stop
+ *    اگر خیلی بد: stop
+ *    اگر مرزی: تا سقف max (مثلاً ۸تا) ادامه
+ */
+function decideSampling(domains, firstBatchResults, config) {
+  const { initialCount, maxCount, goodAvgMsThreshold } = config;
+
+  const testedCount = firstBatchResults.length;
+  const okCount = firstBatchResults.filter(x => x.ok).length;
+  const avg = avgMs(firstBatchResults);
+
+  // خیلی خوب: همه موفق + avg پایین
+  const isVeryGood = okCount === testedCount && avg !== null && avg <= goodAvgMsThreshold;
+
+  // خیلی بد: هیچکدوم موفق نشدن
+  const isVeryBad = okCount === 0;
+
+  if (domains.length <= maxCount) {
+    // گروه نه خیلی بزرگ: به max می‌رسه یعنی می‌تونیم همه رو تست کنیم
+    return { action: "continue", targetCount: domains.length, reason: "small_group" };
+  }
+
+  if (testedCount >= initialCount) {
+    if (isVeryGood) {
+      return { action: "stop", targetCount: testedCount, reason: "very_good_sample" };
+    }
+    if (isVeryBad) {
+      return { action: "stop", targetCount: testedCount, reason: "very_bad_sample" };
+    }
+    // مرزی/نامطمئن
+    return { action: "continue", targetCount: Math.min(maxCount, domains.length), reason: "uncertain_sample" };
+  }
+
+  // حالت پیشفرض
+  return { action: "continue", targetCount: Math.min(maxCount, domains.length), reason: "default" };
+}
+
 const GROUPS = [
   {
     key: "xbox",
     title: "سرورهای Xbox",
+    // دامنه‌های مهم‌تر اول (برای نمونه‌گیری بهتر)
     domains: [
-      "xbox.com",
       "xboxlive.com",
+      "xbox.com",
       "login.live.com",
       "account.microsoft.com",
+      "xsts.auth.xboxlive.com",
       "storeedgefd.dsx.mp.microsoft.com",
-      "xsts.auth.xboxlive.com"
     ],
   },
   {
@@ -126,20 +167,21 @@ const GROUPS = [
   {
     key: "games",
     title: "سرور بازی‌های پرطرفدار",
+    // مهم‌ها اول
     domains: [
-      "ea.com", "help.ea.com", "easports.com", "origin.com",
-      "apexlegends.com", "battlefield.com",
-      "callofduty.com", "activision.com", "battle.net",
-      "epicgames.com", "fortnite.com",
-      "riotgames.com", "playvalorant.com", "leagueoflegends.com",
       "steampowered.com", "steamcommunity.com",
+      "riotgames.com", "playvalorant.com", "leagueoflegends.com",
+      "epicgames.com", "fortnite.com",
+      "battle.net", "activision.com", "callofduty.com",
+      "ea.com", "help.ea.com", "easports.com", "origin.com",
       "ubisoft.com", "rainbow6.com",
+      "apexlegends.com", "battlefield.com",
     ],
   },
   {
     key: "international",
     title: "سرورهای بین‌المللی",
-    domains: ["google.com", "cloudflare.com", "github.com", "microsoft.com", "amazon.com"],
+    domains: ["cloudflare.com", "google.com", "github.com", "microsoft.com", "amazon.com"],
   },
   {
     key: "internal",
@@ -155,11 +197,16 @@ export default async function handler(req, res) {
     const primary = normalizeDigits(u.searchParams.get("primary") || "");
     const secondary = normalizeDigits(u.searchParams.get("secondary") || "");
 
-    // کانکارنسی: قابل تنظیم با query ?conc=8 (سقف امن)
+    // کانکارنسی
     const userConc = Number(normalizeDigits(u.searchParams.get("conc") || "8"));
     const CONCURRENCY = Number.isFinite(userConc)
       ? Math.max(1, Math.min(12, Math.floor(userConc)))
       : 8;
+
+    // پارامترهای sampling (قابل تیون)
+    const initialCount = 3;             // اول چند دامنه نمونه؟
+    const maxCountBigGroups = 8;        // سقف تست برای گروه‌های بزرگ
+    const goodAvgMsThreshold = 120;     // اگر sample عالی بود و avg <= این، قطع کن
 
     if (!primary || !isValidIPv4(primary)) return json(res, 400, { ok: false, error: "invalid_primary" });
     if (isPrivateIPv4(primary)) return json(res, 400, { ok: false, error: "private_primary" });
@@ -170,36 +217,91 @@ export default async function handler(req, res) {
       if (secondary === primary) return json(res, 400, { ok: false, error: "same_dns" });
     }
 
+    async function runGroupAdaptive(resolver, group) {
+      const domains = group.domains;
+
+      // گروه‌های کوچیک: همه
+      const isSmall = domains.length <= 5;
+
+      const maxCount = isSmall ? domains.length : Math.min(maxCountBigGroups, domains.length);
+
+      // batch 1: initial sample
+      const firstBatch = domains.slice(0, Math.min(initialCount, maxCount));
+      const firstResults = await mapWithConcurrency(
+        firstBatch,
+        CONCURRENCY,
+        (d) => resolveOnce(resolver, d)
+      );
+
+      const decision = decideSampling(domains, firstResults, {
+        initialCount: Math.min(initialCount, maxCount),
+        maxCount,
+        goodAvgMsThreshold,
+      });
+
+      let testedResults = firstResults;
+
+      if (decision.action === "continue") {
+        const targetCount = decision.targetCount;
+        const remaining = domains.slice(firstResults.length, targetCount);
+
+        if (remaining.length) {
+          const moreResults = await mapWithConcurrency(
+            remaining,
+            CONCURRENCY,
+            (d) => resolveOnce(resolver, d)
+          );
+          testedResults = testedResults.concat(moreResults);
+        }
+      }
+
+      const okCount = testedResults.filter(x => x.ok).length;
+      const totalTested = testedResults.length;
+
+      return {
+        key: group.key,
+        title: group.title,
+
+        // دامنه‌هایی که واقعاً تست شدند
+        tested: totalTested,
+        okCount,
+        avgMs: avgMs(testedResults),
+        status: groupStatus(testedResults),
+
+        // برای UI/دیباگ: بگو sampling چی کار کرد
+        sampling: {
+          enabled: !isSmall,
+          decision: decision.reason,
+          initialCount: Math.min(initialCount, maxCount),
+          maxCount,
+          totalAvailable: domains.length,
+          skipped: Math.max(0, domains.length - totalTested),
+        },
+
+        items: testedResults,
+      };
+    }
+
     async function runForDns(serverIp) {
       const resolver = new Resolver();
       resolver.setServers([serverIp]);
 
       const groups = [];
       for (const g of GROUPS) {
-        // 👇 اجرای همزمان دامنه‌های هر گروه با محدودیت کانکارنسی
-        const items = await mapWithConcurrency(
-          g.domains,
-          CONCURRENCY,
-          (d) => resolveOnce(resolver, d)
-        );
-
-        const okCount = items.filter(x => x.ok).length;
-        const total = items.length;
-        const avg = avgMs(items);
-        const status = groupStatus(items);
-
-        groups.push({
-          key: g.key,
-          title: g.title,
-          total,
-          okCount,
-          avgMs: avg,
-          status,
-          items
-        });
+        const result = await runGroupAdaptive(resolver, g);
+        groups.push(result);
       }
 
-      return { groups, dnsOk: !allFailed(groups), concurrency: CONCURRENCY };
+      return {
+        groups,
+        dnsOk: !allFailed(groups),
+        concurrency: CONCURRENCY,
+        sampling: {
+          initialCount,
+          maxCountBigGroups,
+          goodAvgMsThreshold,
+        }
+      };
     }
 
     const primaryResult = await runForDns(primary);
@@ -211,7 +313,6 @@ export default async function handler(req, res) {
     }
 
     return json(res, 200, out);
-
   } catch (e) {
     return json(res, 500, { ok: false, error: "server_error" });
   }
