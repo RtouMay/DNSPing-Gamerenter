@@ -221,7 +221,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 
 .boxHead{
   display:grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 150px; /* ستون وضعیت همیشه یک اندازه */
   gap:10px;
   align-items:center;
 }
@@ -253,7 +253,8 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   gap:6px;
   font-size:12px;
   color: var(--muted);
-  min-width: 126px;
+  width:150px;      /* ثابت */
+  min-width:150px;  /* برای اطمینان */
 }
 
 .stateTop{
@@ -282,10 +283,10 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 }
 
 .badges{
-  display:flex;
-  flex-wrap:wrap;
+  display:grid;
+  grid-template-columns: 1fr 1fr; /* Primary و Secondary همیشه کنار هم */
   gap:6px;
-  justify-content:flex-end;
+  width:100%;
 }
 .pill{
   font-size:11px;
@@ -295,6 +296,8 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   background: rgba(7,10,18,.35);
   color: var(--muted);
   white-space:nowrap;
+    text-align:center;
+  min-width:0;
 }
 
 .actions{ margin-top:10px; }
