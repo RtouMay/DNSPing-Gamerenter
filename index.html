@@ -1,888 +1,950 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>تست DNS گیم رنتر</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تست پینگ DNS (Game Renter)</title>
+  <style>
+    :root{
+      --bg1:#0f1226;
+      --bg2:#0b1022;
+      --card:#121a36cc;
+      --card2:#121a36;
+      --txt:#e8ecff;
+      --muted:#a9b1d6;
+      --line:#2a3566;
+      --good:#2ee59d;
+      --bad:#ff4d6d;
+      --warn:#ffcc00;
+      --accent:#7aa2ff;
+      --chip:#1b2550;
+      --chip2:#223066;
+      --shadow: 0 14px 50px rgba(0,0,0,.35);
+      --radius: 18px;
+      --radius2: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
 
-<style>
-@font-face{
-  font-family: "YekanBakh";
-  src: url("YekanBakh-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face{
-  font-family: "YekanBakh";
-  src: url("YekanBakh-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: var(--font);
+      color: var(--txt);
+      background:
+        radial-gradient(900px 500px at 70% 10%, rgba(122,162,255,.25), transparent 60%),
+        radial-gradient(700px 450px at 20% 10%, rgba(46,229,157,.18), transparent 60%),
+        radial-gradient(700px 500px at 50% 110%, rgba(255,77,109,.18), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height: 100vh;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding: 28px 16px 46px;
+    }
 
-:root{
-  --bg:#070a12;
-  --border:#1b2444;
-  --text:#e5e7eb;
-  --muted:#9ca3af;
-  --red:#e11d48;
-  --red2:#fb7185;
-  --ok:#22c55e;
-  --bad:#ef4444;
-}
+    .wrap{
+      width: min(980px, 100%);
+      display:grid;
+      gap: 16px;
+    }
 
-*{ box-sizing:border-box; font-family:"YekanBakh", system-ui, sans-serif; }
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 14px;
+      padding: 16px 18px;
+      border: 1px solid rgba(255,255,255,.06);
+      background: linear-gradient(180deg, rgba(18,26,54,.82), rgba(18,26,54,.55));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
 
-body{
-  margin:0;
-  color:var(--text);
-  background:
-    radial-gradient(900px 500px at 10% 0%, rgba(225,29,72,.18), transparent 45%),
-    radial-gradient(900px 500px at 90% 10%, rgba(251,113,133,.10), transparent 50%),
-    radial-gradient(1200px 700px at 50% 110%, rgba(34,197,94,.06), transparent 50%),
-    var(--bg);
-}
+    .title{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+    }
 
-.container{
-  min-height:100vh;
-  display:grid;
-  place-items:center;
-  padding:16px;
-}
+    .logo{
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background:
+        radial-gradient(14px 14px at 30% 30%, rgba(255,255,255,.35), transparent 65%),
+        linear-gradient(135deg, rgba(122,162,255,.95), rgba(46,229,157,.9));
+      box-shadow: 0 8px 20px rgba(122,162,255,.25);
+      position:relative;
+    }
+    .logo::after{
+      content:"";
+      position:absolute;
+      inset: 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.35);
+      opacity:.7;
+    }
 
-.card{
-  width:100%;
-  max-width:560px;
-  border-radius:22px;
-  background:linear-gradient(180deg, rgba(18,24,43,.92), rgba(14,20,39,.92));
-  border:1px solid rgba(27,36,68,.92);
-  box-shadow:
-    0 24px 80px rgba(0,0,0,.65),
-    0 0 0 1px rgba(225,29,72,.10) inset,
-    0 0 50px rgba(225,29,72,.06);
-  padding:18px;
-  position:relative;
-  overflow:hidden;
-}
+    h1{
+      margin:0;
+      font-size: 17px;
+      line-height: 1.2;
+      font-weight: 800;
+      letter-spacing: -.2px;
+    }
+    .sub{
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
 
-.card:before{
-  content:"";
-  position:absolute; inset:-2px;
-  background:radial-gradient(600px 220px at 50% 0%, rgba(225,29,72,.20), transparent 60%);
-  pointer-events:none;
-}
-.card:after{
-  content:"";
-  position:absolute; inset:-45%;
-  background:
-    radial-gradient(600px 260px at 20% 15%, rgba(225,29,72,.18), transparent 60%),
-    radial-gradient(500px 240px at 85% 25%, rgba(251,113,133,.16), transparent 65%),
-    radial-gradient(700px 320px at 55% 90%, rgba(225,29,72,.08), transparent 60%),
-    linear-gradient(120deg, rgba(225,29,72,.10), transparent 40%, rgba(251,113,133,.08));
-  filter: blur(18px);
-  opacity:.75;
-  mix-blend-mode: screen;
-  animation: videoGlow 6s ease-in-out infinite;
-  pointer-events:none;
-  z-index:0;
-}
-@keyframes videoGlow{
-  0%{transform:translate3d(-2%,-2%,0) scale(1)}
-  50%{transform:translate3d(2%,1%,0) scale(1.04)}
-  100%{transform:translate3d(-2%,-2%,0) scale(1)}
-}
+    .hint{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      color: var(--muted);
+      font-size: 12px;
+      text-align:left;
+    }
+    .pill{
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #d7ddff;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
+      padding: 6px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
 
-.header, label, .inputs, .helper, button, .progress, .grid, .footer, .errorBox, .loader{
-  position:relative; z-index:2;
-}
+    .card{
+      border: 1px solid rgba(255,255,255,.06);
+      background: linear-gradient(180deg, rgba(18,26,54,.75), rgba(18,26,54,.45));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      backdrop-filter: blur(10px);
+    }
 
-/* Header */
-.header{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:10px;
-  padding-top:6px;
-  padding-bottom:8px;
-}
-.header img{
-  width:110px;
-  height:auto;
-  display:block;
-  filter:drop-shadow(0 14px 30px rgba(225,29,72,.34));
-}
-.header .brandName{
-  font-weight:700;
-  font-size:15px;
-  line-height:1.4;
-}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 16px;
+    }
+    @media (max-width: 860px){
+      .grid{grid-template-columns: 1fr;}
+      .hint{display:none;}
+    }
 
-/* Form */
-label{ display:block; color:var(--muted); font-size:13px; margin:10px 0 8px; }
+    .form{
+      display:grid;
+      gap: 12px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 520px){
+      .row{grid-template-columns:1fr;}
+    }
 
-.inputs{
-  display:grid;
-  grid-template-columns: 1fr;
-  gap:10px;
-}
+    label{
+      font-size: 12px;
+      color: var(--muted);
+      display:block;
+      margin-bottom: 6px;
+    }
 
-.inputWrap{ position:relative; }
-input{
-  width:100%;
-  padding:14px 14px;
-  border-radius:16px;
-  border:1px solid rgba(27,36,68,.95);
-  background:rgba(11,16,34,.92);
-  color:var(--text);
-  font-size:15px;
-  outline:none;
-  transition:.2s;
-}
-input:focus{
-  border-color:rgba(225,29,72,.92);
-  box-shadow:0 0 0 4px rgba(225,29,72,.18);
-}
+    .input{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(9, 12, 26, .45);
+      color: var(--txt);
+      outline: none;
+      transition: .15s;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    .input:focus{
+      border-color: rgba(122,162,255,.55);
+      box-shadow: 0 0 0 4px rgba(122,162,255,.12);
+    }
 
-.helper{
-  margin-top:8px;
-  color: var(--muted);
-  font-size:12px;
-  line-height: 1.9;
-}
+    .btns{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+    }
 
-/* Button */
-button{
-  width:100%;
-  margin-top:12px;
-  padding:14px 14px;
-  border-radius:18px;
-  border:none;
-  color:white;
-  font-size:15px;
-  cursor:pointer;
-  background:linear-gradient(135deg, var(--red), var(--red2));
-  box-shadow:0 12px 30px rgba(225,29,72,.22);
-  transition:.2s;
-  font-weight:700;
-}
-button:hover{ transform:translateY(-1px) }
-button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
+    .btn{
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color: var(--txt);
+      padding: 11px 14px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-weight: 700;
+      font-size: 13px;
+      transition: .15s;
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); }
+    .btn:active{ transform: translateY(0px); }
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(122,162,255,.95), rgba(46,229,157,.85));
+      border-color: rgba(255,255,255,.14);
+      color: #0b1022;
+    }
+    .btn.danger{
+      background: rgba(255,77,109,.12);
+      border-color: rgba(255,77,109,.25);
+      color: #ffd2da;
+    }
+    .btn.ghost{
+      background: transparent;
+      border-color: rgba(255,255,255,.10);
+      color: var(--muted);
+    }
+    .btn.small{
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
 
-.progress{
-  margin-top:12px;
-  height:10px;
-  border-radius:999px;
-  background:rgba(11,16,34,.92);
-  border:1px solid rgba(27,36,68,.95);
-  overflow:hidden;
-}
-.progress i{
-  display:block;
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg, var(--red), var(--red2));
-  transition:width .35s cubic-bezier(.2,.8,.2,1);
-}
+    .mini{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
 
-/* Error */
-.errorBox{
-  margin-top:10px;
-  padding:12px 12px;
-  border-radius:16px;
-  border:1px dashed rgba(239,68,68,.62);
-  background: rgba(11,16,34,.90);
-  color:#fee2e2;
-  font-size:13px;
-  display:none;
-  line-height:1.9;
-}
-.errorBox.show{ display:block; }
+    .note{
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(255,255,255,.14);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
 
-/* Cards */
-.grid{
-  margin-top:14px;
-  display:grid;
-  grid-template-columns: 1fr;
-  gap:10px;
-}
+    /* Suggested DNS chips (compact, no layout break) */
+    .suggested{
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      display:grid;
+      gap: 8px;
+    }
+    .suggestedHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .chips{
+      display:flex;
+      gap: 8px;
+      overflow:auto;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+    .chip{
+      flex: 0 0 auto;
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(27, 37, 80, .55);
+      cursor:pointer;
+      transition:.15s;
+      user-select:none;
+      white-space: nowrap;
+    }
+    .chip:hover{ transform: translateY(-1px); border-color: rgba(122,162,255,.35); }
+    .chip:active{ transform: translateY(0px); }
+    .chipName{
+      font-weight: 800;
+      font-size: 12px;
+      color: #dfe6ff;
+    }
+    .chipIps{
+      font-family: var(--mono);
+      font-size: 11px;
+      color: rgba(232,236,255,.78);
+    }
+    .chipCopy{
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color: var(--txt);
+      border-radius: 999px;
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor:pointer;
+      transition:.15s;
+    }
+    .chipCopy:hover{ border-color: rgba(46,229,157,.35); }
 
-.box{
-  background: rgba(11,16,34,.92);
-  border:1px solid rgba(27,36,68,.95);
-  border-radius:18px;
-  padding:12px;
-  transition:.2s;
-  overflow:hidden;
-}
-.box.ok{ border-color: rgba(34,197,94,.55); box-shadow: 0 0 0 3px rgba(34,197,94,.08); }
-.box.fail{ border-color: rgba(239,68,68,.55); box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
-.box.testing{ border-color: rgba(225,29,72,.35); box-shadow: 0 0 0 3px rgba(225,29,72,.06); }
+    /* Results */
+    .results{
+      display:grid;
+      gap: 12px;
+    }
 
-.boxHead{
-  display:grid;
-  grid-template-columns: 1fr auto;
-  gap:10px;
-  align-items:center;
-}
+    .statusBar{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content:space-between;
+      padding: 12px 14px;
+      border-radius: var(--radius2);
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(9,12,26,.35);
+    }
+    .statusLeft{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+    }
+    .dot{
+      width: 11px; height: 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.18);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+    }
+    .dot.good{ background: var(--good); box-shadow: 0 0 0 4px rgba(46,229,157,.12); }
+    .dot.bad{ background: var(--bad); box-shadow: 0 0 0 4px rgba(255,77,109,.12); }
+    .dot.warn{ background: var(--warn); box-shadow: 0 0 0 4px rgba(255,204,0,.10); }
 
-.boxTitle{
-  display:grid;
-  grid-template-columns: 34px 1fr;
-  gap:10px;
-  align-items:center;
-  min-height:34px;
-}
-.icon{
-  width:34px; height:34px;
-  display:grid; place-items:center;
-  border-radius:12px;
-  border:1px solid rgba(27,36,68,.85);
-  background: rgba(7,10,18,.35);
-}
-.boxTitleText{
-  font-weight:700;
-  font-size:14px;
-  line-height:1.3;
-}
+    .statusTitle{
+      font-weight: 900;
+      font-size: 13px;
+    }
+    .statusSub{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
 
-.state{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:6px;
-  font-size:12px;
-  color: var(--muted);
-  min-width: 126px;
-}
+    .kpi{
+      display:flex;
+      gap: 8px;
+      align-items:baseline;
+      font-family: var(--mono);
+    }
+    .kpi strong{ font-size: 14px; }
+    .kpi span{ font-size: 11px; color: var(--muted); }
 
-.stateTop{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
+    .split{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 520px){
+      .split{ grid-template-columns: 1fr; }
+    }
 
-.light{
-  width:10px; height:10px; border-radius:50%;
-  background: rgba(156,163,175,.45);
-  transition:.2s;
-}
+    .box{
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(9,12,26,.35);
+      border-radius: var(--radius2);
+      padding: 12px 12px;
+    }
+    .boxHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .boxTitle{
+      font-weight: 900;
+      font-size: 13px;
+    }
+    .badge{
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(232,236,255,.9);
+    }
+    .badge.good{ border-color: rgba(46,229,157,.28); background: rgba(46,229,157,.10); color: #bfffe6;}
+    .badge.bad{ border-color: rgba(255,77,109,.30); background: rgba(255,77,109,.10); color: #ffd2da;}
+    .badge.warn{ border-color: rgba(255,204,0,.28); background: rgba(255,204,0,.08); color: #fff4c2;}
 
-.box.testing .light{
-  background: linear-gradient(180deg, var(--red), var(--red2));
-  box-shadow: 0 0 16px rgba(225,29,72,.45);
-  animation: blink 1s ease-in-out infinite;
-}
-.box.ok .light{ background: var(--ok); box-shadow: 0 0 16px rgba(34,197,94,.45); }
-.box.fail .light{ background: var(--bad); box-shadow: 0 0 16px rgba(239,68,68,.45); }
+    .table{
+      display:grid;
+      gap: 8px;
+    }
+    .rowItem{
+      display:flex;
+      justify-content:space-between;
+      gap: 10px;
+      align-items:center;
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.03);
+    }
+    .rTitle{
+      font-size: 12px;
+      color: rgba(232,236,255,.9);
+    }
+    .rRight{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .ms{ color: #dfe6ff; }
+    .fail{ color: #ffb3bf; }
 
-@keyframes blink{
-  0%,100%{ opacity:.55; transform:scale(.92); }
-  50%{ opacity:1; transform:scale(1); }
-}
+    details{
+      border: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    summary{
+      cursor:pointer;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .err{
+      color: rgba(255,77,109,.85);
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-top: 8px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
 
-.badges{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  justify-content:flex-end;
-}
-.pill{
-  font-size:11px;
-  padding:3px 8px;
-  border-radius:999px;
-  border:1px solid rgba(27,36,68,.82);
-  background: rgba(7,10,18,.35);
-  color: var(--muted);
-  white-space:nowrap;
-}
+    /* Loading */
+    .loading{
+      display:none;
+      align-items:center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(9,12,26,.35);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .loading.show{ display:flex; }
+    .spinner{
+      width: 16px; height: 16px;
+      border-radius: 999px;
+      border: 2px solid rgba(255,255,255,.14);
+      border-top-color: rgba(122,162,255,.9);
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-.actions{ margin-top:10px; }
-.toggleBtn{
-  width:100%;
-  border:none;
-  cursor:pointer;
-  padding:10px 12px;
-  border-radius:14px;
-  background: rgba(7,10,18,.35);
-  border: 1px solid rgba(27,36,68,.75);
-  color: rgba(251,113,133,.98);
-  font-size:12px;
-  font-weight:700;
-  transition:.2s;
-}
-.toggleBtn:hover{
-  border-color: rgba(225,29,72,.55);
-  box-shadow: 0 0 0 3px rgba(225,29,72,.10);
-}
-
-.details{
-  margin-top:10px;
-  padding-top:10px;
-  border-top:1px solid rgba(27,36,68,.55);
-  display:none;
-  color: var(--muted);
-  font-size:12px;
-  line-height:1.9;
-}
-.box.expanded .details{ display:block; }
-
-.dBlock{
-  margin-top:10px;
-  padding:10px 10px;
-  border-radius:14px;
-  border:1px solid rgba(27,36,68,.65);
-  background: rgba(7,10,18,.22);
-}
-.dTitle{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  font-weight:700;
-  color: var(--text);
-  margin-bottom:8px;
-}
-.dMeta{ color: var(--muted); font-weight:400; font-size:11px; }
-
-.dItem{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding:6px 0;
-  border-bottom:1px solid rgba(27,36,68,.35);
-}
-.dItem:last-child{ border-bottom:none; }
-
-.domain{
-  direction:ltr;
-  text-align:left;
-  font-weight:700;
-  color: var(--text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size:12px;
-  max-width: 68%;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.dTag{
-  font-size:11px;
-  padding:3px 8px;
-  border-radius:999px;
-  border:1px solid rgba(27,36,68,.8);
-  background: rgba(7,10,18,.35);
-  color: var(--muted);
-  white-space:nowrap;
-}
-.dTag.ok{ border-color: rgba(34,197,94,.55); color:#d1fae5; }
-.dTag.fail{ border-color: rgba(239,68,68,.55); color:#fee2e2; }
-
-/* Loader */
-.loader{
-  position:absolute;
-  inset:0;
-  z-index:10;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  background: rgba(0,0,0,.78);
-  backdrop-filter: blur(10px);
-}
-.loader.show{ display:flex; animation: fadeIn .2s ease; }
-@keyframes fadeIn{ from{opacity:0} to{opacity:1} }
-
-.loaderBox{
-  width:min(520px, 92%);
-  text-align:center;
-  padding:18px 16px;
-  border-radius:22px;
-  border:1px solid rgba(225,29,72,.28);
-  background: rgba(11,16,34,.62);
-  box-shadow: 0 18px 80px rgba(0,0,0,.6);
-}
-
-.spinner{
-  width:110px;
-  height:110px;
-  margin: 6px auto 10px;
-  position:relative;
-  display:grid;
-  place-items:center;
-  filter: drop-shadow(0 18px 40px rgba(225,29,72,.30));
-}
-.spinner:before{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:50%;
-  background:
-    conic-gradient(from 210deg,
-      rgba(225,29,72,0) 0deg,
-      rgba(225,29,72,0) 210deg,
-      rgba(225,29,72,1) 270deg,
-      rgba(251,113,133,1) 310deg,
-      rgba(225,29,72,0) 360deg
-    );
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 0);
-  mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 0);
-  opacity:.95;
-  animation: spin 1.0s linear infinite;
-}
-.spinner:after{
-  content:"";
-  position:absolute;
-  inset:14px;
-  border-radius:50%;
-  background: rgba(0,0,0,.28);
-  border:1px solid rgba(255,255,255,.06);
-  box-shadow: 0 0 0 1px rgba(225,29,72,.10) inset;
-}
-@keyframes spin{ to{ transform: rotate(360deg); } }
-
-.loaderTitle{ font-weight:700; font-size:15px; margin-top:4px; }
-.loaderStep{ margin-top:6px; color:var(--muted); font-size:13px; line-height:1.8; }
-
-.loaderExtra{
-  margin-top:10px;
-  display:none;
-  gap:10px;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-}
-.loaderExtra.show{ display:flex; }
-
-.loaderHint{
-  color: var(--muted);
-  font-size:12px;
-  line-height:1.8;
-}
-.cancelBtn{
-  width:min(260px, 86%);
-  border:none;
-  cursor:pointer;
-  padding:12px 14px;
-  border-radius:16px;
-  background: linear-gradient(135deg, var(--bad), rgba(239,68,68,.72));
-  color:white;
-  font-weight:700;
-  font-size:14px;
-  box-shadow: 0 12px 30px rgba(239,68,68,.20);
-}
-
-.footer{
-  margin-top:12px;
-  text-align:center;
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.9;
-}
-</style>
+    /* Toast */
+    .toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 999;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(9,12,26,.65);
+      backdrop-filter: blur(10px);
+      color: rgba(232,236,255,.92);
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events:none;
+      transition: .2s;
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
 </head>
 
 <body>
-<div class="container">
-  <div class="card">
-
-    <div class="loader" id="loader">
-      <div class="loaderBox">
-        <div class="spinner" aria-hidden="true"></div>
-        <div class="loaderTitle">تست DNS گیم رنتر</div>
-        <div class="loaderStep" id="loaderText">در حال آماده‌سازی هستیم…</div>
-
-        <div class="loaderExtra" id="loaderExtra">
-          <div class="loaderHint">لطفاً کمی صبور باشید…</div>
-          <button class="cancelBtn" id="cancelBtn" type="button">انصراف</button>
-        </div>
-      </div>
-    </div>
-
+  <div class="wrap">
     <div class="header">
-      <img src="logo.png" alt="Game Renter">
-      <div class="brandName">تست DNS گیم رنتر</div>
-    </div>
-
-    <label>DNS را وارد کنید</label>
-    <div class="inputs">
-      <div class="inputWrap">
-        <input id="primary" inputmode="decimal" autocomplete="off"
-               placeholder="Primary DNS (مثل 8.8.8.8)">
+      <div class="title">
+        <div class="logo"></div>
+        <div>
+          <h1>تست سرعت DNS برای گیم (Game Renter)</h1>
+          <div class="sub">این ابزار زمان پاسخ DNS برای مجموعه‌ای از سرویس‌های گیم/بین‌المللی/داخلی را می‌سنجد.</div>
+        </div>
       </div>
-      <div class="inputWrap">
-        <input id="secondary" inputmode="decimal" autocomplete="off"
-               placeholder="Secondary DNS (اختیاری)">
+      <div class="hint">
+        <div class="pill">/api/test?primary=1.1.1.1&amp;secondary=8.8.8.8</div>
       </div>
     </div>
 
-    <div class="helper">
+    <div class="grid">
+      <div class="card">
+        <div class="form">
+          <div class="row">
+            <div>
+              <label for="primary">DNS اصلی (Primary)</label>
+              <input class="input" id="primary" inputmode="numeric" placeholder="مثلاً 1.1.1.1" />
+            </div>
+            <div>
+              <label for="secondary">DNS دوم (Secondary) (اختیاری)</label>
+              <input class="input" id="secondary" inputmode="numeric" placeholder="مثلاً 8.8.8.8" />
+            </div>
+          </div>
 
+          <div class="btns">
+            <button class="btn primary" id="btnTest">شروع تست</button>
+            <button class="btn danger" id="btnCancel" disabled>لغو</button>
+            <button class="btn ghost" id="btnClear">پاک کردن</button>
+          </div>
+
+          <!-- Suggested DNS -->
+          <div class="suggested" id="suggestedWrap" aria-live="polite">
+            <div class="suggestedHead">
+              <div>DNSهای پیشنهادی</div>
+              <button class="btn small ghost" id="btnReloadDns">ریفرش لیست</button>
+            </div>
+            <div class="chips" id="dnsChips"></div>
+            <div class="mini">با کلیک روی هر مورد، همان لحظه تست اجرا می‌شود. دکمه ⧉ هم برای کپی Primary/Secondary است.</div>
+          </div>
+
+          <div class="note">
+            نکته: این تست «پینگ واقعی به سرور بازی» نیست؛ سرعت پاسخ DNS را می‌سنجد (Resolve time).
+            اگر DNS شما در بعضی گروه‌ها FAIL بدهد، ممکن است به خاطر فیلترینگ/تحریم/مسیر شبکه باشد.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="results">
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div id="loadingText">در حال آماده‌سازی…</div>
+          </div>
+
+          <div class="statusBar" id="statusBar">
+            <div class="statusLeft">
+              <div class="dot" id="statusDot"></div>
+              <div>
+                <div class="statusTitle" id="statusTitle">آماده تست</div>
+                <div class="statusSub" id="statusSub">DNS را وارد کنید و شروع تست را بزنید.</div>
+              </div>
+            </div>
+            <div class="kpi">
+              <strong id="kpiValue">—</strong>
+              <span>میانگین (ms)</span>
+            </div>
+          </div>
+
+          <div class="split" id="resultSplit" style="display:none;">
+            <div class="box" id="boxPrimary">
+              <div class="boxHead">
+                <div class="boxTitle">Primary</div>
+                <div class="badge" id="badgePrimary">—</div>
+              </div>
+              <div class="table" id="tblPrimary"></div>
+            </div>
+
+            <div class="box" id="boxSecondary">
+              <div class="boxHead">
+                <div class="boxTitle">Secondary</div>
+                <div class="badge" id="badgeSecondary">—</div>
+              </div>
+              <div class="table" id="tblSecondary"></div>
+            </div>
+          </div>
+
+          <details id="detailsBox" style="display:none;">
+            <summary>جزئیات و خطاها</summary>
+            <div class="err" id="errBox"></div>
+          </details>
+        </div>
+      </div>
     </div>
-
-    <button id="btn">شروع تست</button>
-
-    <div class="progress"><i id="bar"></i></div>
-
-    <div class="errorBox" id="err"></div>
-
-    <div class="grid" id="grid"></div>
-
-    <div class="footer">
-      نتیجه‌ها بر اساس Resolve شدن دامنه‌های کلیدی هر سرویس است و ممکن است با اینترنت/منطقه فرق کند.
-    </div>
-
   </div>
-</div>
 
-<script>
-const btn = document.getElementById('btn');
-const primary = document.getElementById('primary');
-const secondary = document.getElementById('secondary');
-const bar = document.getElementById('bar');
-const err = document.getElementById('err');
+  <div class="toast" id="toast">کپی شد ✅</div>
 
-const loader = document.getElementById('loader');
-const loaderText = document.getElementById('loaderText');
-const loaderExtra = document.getElementById('loaderExtra');
-const cancelBtn = document.getElementById('cancelBtn');
+  <script>
+    // ---------- Helpers ----------
+    const $ = (id) => document.getElementById(id);
 
-const grid = document.getElementById('grid');
-const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
+    function showToast(text){
+      const t = $("toast");
+      t.textContent = text || "کپی شد ✅";
+      t.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=>t.classList.remove("show"), 1300);
+    }
 
-let currentController = null;
-let hardTimeoutId = null;
-let softTimeoutId = null;
+    function normalizeDigits(str){
+      const map = {
+        "۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9",
+        "٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9",
+        "٫":".","٬":"","،":"."," ":""
+      };
+      return (str || "").toString().trim().split("").map(ch => map[ch] ?? ch).join("");
+    }
 
-function normalizeDigits(input){
-  const map = {
-    "۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9",
-    "٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9",
-    "٫":".","٬":"","،":"."," ":""
-  };
-  return (input||"").toString().trim().split("").map(ch => map[ch] ?? ch).join("");
-}
-function looksLikeIp(ip){
-  ip = normalizeDigits(ip);
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip);
-}
+    function isValidIPv4(ip){
+      ip = normalizeDigits(ip);
+      if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return false;
+      const parts = ip.split(".").map(Number);
+      return parts.every(x => Number.isFinite(x) && x >= 0 && x <= 255);
+    }
 
-function showError(msg){
-  err.textContent = msg;
-  err.classList.add('show');
-}
-function clearError(){
-  err.textContent = '';
-  err.classList.remove('show');
-}
+    function setStatus(kind, title, sub, avg){
+      const dot = $("statusDot");
+      dot.classList.remove("good","bad","warn");
+      if (kind) dot.classList.add(kind);
+      $("statusTitle").textContent = title || "";
+      $("statusSub").textContent = sub || "";
+      $("kpiValue").textContent = (avg === null || avg === undefined) ? "—" : String(avg);
+    }
 
-function showLoader(text){
-  loaderText.textContent = text;
-  loaderExtra.classList.remove('show');
-  loader.classList.add('show');
-}
-function setLoaderText(text){ loaderText.textContent = text; }
-function hideLoader(){ loader.classList.remove('show'); loaderExtra.classList.remove('show'); }
+    function badge(el, kind, text){
+      el.classList.remove("good","bad","warn");
+      if (kind) el.classList.add(kind);
+      el.textContent = text;
+    }
 
-function fakeProgress(){
-  let p = 6;
-  bar.style.width = '6%';
-  const t = setInterval(()=>{
-    p = Math.min(92, p + Math.random()*10);
-    bar.style.width = Math.floor(p) + '%';
-  }, 220);
-  return ()=>clearInterval(t);
-}
+    function groupRow(g){
+      const div = document.createElement("div");
+      div.className = "rowItem";
+      const left = document.createElement("div");
+      left.className = "rTitle";
+      left.textContent = g.title;
+      const right = document.createElement("div");
+      right.className = "rRight";
 
-function friendlyError(apiError){
-  switch(apiError){
-    case "invalid_primary":
-      return "Primary DNS معتبر نیست. نمونه: 8.8.8.8";
-    case "invalid_secondary":
-      return "Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.";
-    case "private_primary":
-      return "Primary DNS خصوصی/لوکال است. بهتر است یک DNS عمومی وارد کنید.";
-    case "private_secondary":
-      return "Secondary DNS خصوصی/لوکال است. اگر وارد می‌کنید، بهتر است عمومی باشد.";
-    case "same_dns":
-      return "Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.";
-    case "server_error":
-      return "یک مشکل سمت سرور پیش آمد. لطفاً دوباره امتحان کنید.";
-    default:
-      return "یک خطا رخ داد. لطفاً دوباره امتحان کنید.";
-  }
-}
-
-function shortenDomain(d){
-  d = String(d || "");
-  if(d.length <= 26) return d;
-  const start = d.slice(0, 12);
-  const end = d.slice(-10);
-  return `${start}…${end}`;
-}
-
-function buildCards(templateGroups){
-  grid.innerHTML = templateGroups.map(g => `
-    <div class="box testing" id="box-${g.key}">
-      <div class="boxHead">
-        <div class="boxTitle">
-          <span class="icon">${g.icon}</span>
-          <div class="boxTitleText">${g.title}</div>
-        </div>
-        <div class="state">
-          <div class="stateTop">
-            <span class="light"></span>
-            <span id="state-${g.key}">آماده</span>
-          </div>
-          <div class="badges">
-            <span class="pill" id="p-${g.key}">Primary: -</span>
-            <span class="pill" id="s-${g.key}">Secondary: -</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات بیشتر</button>
-      </div>
-
-      <div class="details" id="details-${g.key}">
-        هنوز تست انجام نشده است.
-      </div>
-    </div>
-  `).join("");
-
-  grid.querySelectorAll(".toggleBtn").forEach(b=>{
-    b.addEventListener("click", ()=>{
-      const key = b.getAttribute("data-key");
-      const box = document.getElementById(`box-${key}`);
-      const open = b.getAttribute("data-open") === "1";
-      if(open){
-        box.classList.remove("expanded");
-        b.textContent = "جزئیات بیشتر";
-        b.setAttribute("data-open","0");
+      if (g.status === "fail"){
+        const x = document.createElement("span");
+        x.className = "fail";
+        x.textContent = "FAIL";
+        right.appendChild(x);
       } else {
-        box.classList.add("expanded");
-        b.textContent = "بستن جزئیات";
-        b.setAttribute("data-open","1");
+        const ms = document.createElement("span");
+        ms.className = "ms";
+        ms.textContent = (g.avgMs == null ? "—" : (g.avgMs + "ms"));
+        right.appendChild(ms);
       }
+
+      const meta = document.createElement("span");
+      meta.style.color = "rgba(232,236,255,.55)";
+      meta.textContent = `(${g.okCount}/${g.tested ?? g.total ?? g.items?.length ?? 0})`;
+      right.appendChild(meta);
+
+      div.appendChild(left);
+      div.appendChild(right);
+      return div;
+    }
+
+    function renderResult(sideKey, sideData){
+      const isPrimary = sideKey === "primary";
+      const tbl = isPrimary ? $("tblPrimary") : $("tblSecondary");
+      const badgeEl = isPrimary ? $("badgePrimary") : $("badgeSecondary");
+
+      tbl.innerHTML = "";
+      if (!sideData || !sideData.groups){
+        badge(badgeEl, "bad", "خطا");
+        return { avgOverall: null, okOverall: false };
+      }
+
+      // Overall avg: average of group avgMs where ok
+      const okGroups = sideData.groups.filter(g => g.status !== "fail" && typeof g.avgMs === "number");
+      const avgOverall = okGroups.length ? Math.round(okGroups.reduce((a,b)=>a+b.avgMs,0)/okGroups.length) : null;
+
+      // badge
+      const okCount = sideData.groups.reduce((a,g)=>a+(g.okCount||0),0);
+      const tested = sideData.groups.reduce((a,g)=>a+((g.tested ?? g.total ?? g.items?.length) || 0),0);
+      const okOverall = okCount > 0;
+
+      if (!okOverall) badge(badgeEl, "bad", "FAIL");
+      else if (avgOverall != null && avgOverall <= 120) badge(badgeEl, "good", "خوب");
+      else badge(badgeEl, "warn", "متوسط");
+
+      sideData.groups.forEach(g => tbl.appendChild(groupRow(g)));
+      return { avgOverall, okOverall };
+    }
+
+    // ---------- Suggested DNS: read from dns.txt ----------
+    const DEFAULT_SUGGESTED = [
+      { name: "Cloudflare", primary: "1.1.1.1", secondary: "1.0.0.1" },
+      { name: "Google", primary: "8.8.8.8", secondary: "8.8.4.4" },
+      { name: "Quad9", primary: "9.9.9.9", secondary: "149.112.112.112" },
+      { name: "OpenDNS", primary: "208.67.222.222", secondary: "208.67.220.220" },
+    ];
+
+    function parseDnsTxt(text){
+      const lines = (text || "").split(/\r?\n/);
+      const out = [];
+      for (const raw of lines){
+        const line = raw.trim();
+        if (!line) continue;
+        if (line.startsWith("#")) continue;
+        const parts = line.split("|").map(s => s.trim());
+        if (parts.length < 2) continue;
+        const name = parts[0] || "DNS";
+        const primary = normalizeDigits(parts[1] || "");
+        const secondary = normalizeDigits(parts[2] || "");
+        if (!isValidIPv4(primary)) continue;
+        if (secondary && !isValidIPv4(secondary)) continue;
+        out.push({ name, primary, secondary });
+      }
+      return out;
+    }
+
+    async function loadSuggestedDns(){
+      try{
+        const r = await fetch("dns.txt", { cache: "no-store" });
+        if (!r.ok) throw new Error("dns.txt not found");
+        const txt = await r.text();
+        const parsed = parseDnsTxt(txt);
+        if (!parsed.length) throw new Error("dns.txt empty/invalid");
+        renderChips(parsed);
+      }catch(e){
+        renderChips(DEFAULT_SUGGESTED);
+      }
+    }
+
+    function renderChips(list){
+      const wrap = $("dnsChips");
+      wrap.innerHTML = "";
+
+      list.forEach((d) => {
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.title = "کلیک = پر کردن و شروع تست";
+
+        const name = document.createElement("span");
+        name.className = "chipName";
+        name.textContent = d.name;
+
+        const ips = document.createElement("span");
+        ips.className = "chipIps";
+        ips.textContent = d.secondary ? `${d.primary} / ${d.secondary}` : d.primary;
+
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "chipCopy";
+        copyBtn.type = "button";
+        copyBtn.textContent = "⧉";
+        copyBtn.title = "کپی Primary/Secondary";
+
+        copyBtn.addEventListener("click", async (ev) => {
+          ev.stopPropagation();
+          const text = d.secondary ? `${d.primary}\n${d.secondary}` : d.primary;
+          try{
+            await navigator.clipboard.writeText(text);
+            showToast("کپی شد ✅");
+          }catch{
+            // fallback
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            ta.remove();
+            showToast("کپی شد ✅");
+          }
+        });
+
+        chip.addEventListener("click", () => {
+          $("primary").value = d.primary;
+          $("secondary").value = d.secondary || "";
+          runTest(true);
+        });
+
+        chip.appendChild(name);
+        chip.appendChild(ips);
+        chip.appendChild(copyBtn);
+        wrap.appendChild(chip);
+      });
+    }
+
+    // ---------- API Test ----------
+    let controller = null;
+    let hardTimeout = null;
+
+    async function runTest(fromChip){
+      const primary = normalizeDigits($("primary").value);
+      const secondary = normalizeDigits($("secondary").value);
+
+      if (!isValidIPv4(primary)){
+        setStatus("bad", "ورودی اشتباه", "DNS اصلی معتبر نیست.", null);
+        return;
+      }
+      if (secondary && !isValidIPv4(secondary)){
+        setStatus("bad", "ورودی اشتباه", "DNS دوم معتبر نیست.", null);
+        return;
+      }
+      if (secondary && secondary === primary){
+        setStatus("bad", "ورودی اشتباه", "Primary و Secondary یکی هستند.", null);
+        return;
+      }
+
+      // UI
+      $("resultSplit").style.display = "none";
+      $("detailsBox").style.display = "none";
+      $("errBox").textContent = "";
+
+      $("loading").classList.add("show");
+      $("loadingText").textContent = fromChip ? "در حال تست DNS پیشنهادی…" : "در حال تست…";
+      setStatus("warn", "در حال تست…", "لطفاً چند لحظه صبر کنید.", null);
+
+      $("btnTest").disabled = true;
+      $("btnCancel").disabled = false;
+
+      controller = new AbortController();
+      const signal = controller.signal;
+
+      // Hard timeout (overall)
+      clearTimeout(hardTimeout);
+      hardTimeout = setTimeout(() => {
+        if (controller) controller.abort();
+      }, 15000);
+
+      const params = new URLSearchParams();
+      params.set("primary", primary);
+      if (secondary) params.set("secondary", secondary);
+
+      try{
+        const r = await fetch(`/api/test?${params.toString()}`, { signal });
+        const data = await r.json().catch(()=>null);
+
+        $("loading").classList.remove("show");
+        clearTimeout(hardTimeout);
+
+        if (!r.ok || !data || !data.ok){
+          const err = (data && data.error) ? data.error : "request_failed";
+          setStatus("bad", "خطا در تست", "مشکلی پیش آمد. دوباره تلاش کنید.", null);
+          $("detailsBox").style.display = "block";
+          $("errBox").textContent = `Error: ${err}`;
+          return;
+        }
+
+        // Render
+        const primaryRes = data.results?.primary;
+        const secondaryRes = data.results?.secondary;
+
+        $("resultSplit").style.display = "grid";
+        $("boxSecondary").style.display = secondaryRes ? "block" : "none";
+
+        const a = renderResult("primary", primaryRes);
+        const b = secondaryRes ? renderResult("secondary", secondaryRes) : { avgOverall: null, okOverall: false };
+
+        // Status summary
+        const avgs = [a.avgOverall, b.avgOverall].filter(x => typeof x === "number");
+        const overallAvg = avgs.length ? Math.round(avgs.reduce((x,y)=>x+y,0)/avgs.length) : null;
+
+        if (!a.okOverall && (!secondaryRes || !b.okOverall)){
+          setStatus("bad", "DNS مشکل دارد", "در تمام گروه‌ها خطا داشتیم (ممکن است مسیر شبکه/فیلترینگ باشد).", overallAvg);
+        } else {
+          // pick best if two
+          let sub = "نتیجه آماده است.";
+          if (secondaryRes && a.okOverall && b.okOverall && a.avgOverall != null && b.avgOverall != null){
+            const diff = a.avgOverall - b.avgOverall;
+            if (diff < 0) sub = `Primary سریع‌تر است (${Math.abs(diff)}ms بهتر).`;
+            else if (diff > 0) sub = `Secondary سریع‌تر است (${diff}ms بهتر).`;
+            else sub = "هر دو تقریباً برابرند.";
+          }
+          setStatus("good", "تست انجام شد", sub, overallAvg);
+        }
+
+        // Details (show sampling/concurrency + errors)
+        const lines = [];
+        if (primaryRes){
+          lines.push(`Primary: concurrency=${primaryRes.concurrency ?? "—"}`);
+          if (primaryRes.sampling){
+            lines.push(`Primary sampling: initial=${primaryRes.sampling.initialCount}, maxBig=${primaryRes.sampling.maxCountBigGroups}, good<=${primaryRes.sampling.goodAvgMsThreshold}`);
+          }
+          primaryRes.groups?.forEach(g=>{
+            const failItems = (g.items||[]).filter(x=>!x.ok);
+            if (failItems.length){
+              lines.push(`\n[Primary] ${g.title} - FAIL (${failItems.length} مورد):`);
+              failItems.slice(0,8).forEach(it=>lines.push(`- ${it.domain}: ${it.err}`));
+              if (failItems.length > 8) lines.push(`- ... (${failItems.length-8} مورد دیگر)`);
+            }
+          });
+        }
+        if (secondaryRes){
+          lines.push(`\nSecondary: concurrency=${secondaryRes.concurrency ?? "—"}`);
+          if (secondaryRes.sampling){
+            lines.push(`Secondary sampling: initial=${secondaryRes.sampling.initialCount}, maxBig=${secondaryRes.sampling.maxCountBigGroups}, good<=${secondaryRes.sampling.goodAvgMsThreshold}`);
+          }
+          secondaryRes.groups?.forEach(g=>{
+            const failItems = (g.items||[]).filter(x=>!x.ok);
+            if (failItems.length){
+              lines.push(`\n[Secondary] ${g.title} - FAIL (${failItems.length} مورد):`);
+              failItems.slice(0,8).forEach(it=>lines.push(`- ${it.domain}: ${it.err}`));
+              if (failItems.length > 8) lines.push(`- ... (${failItems.length-8} مورد دیگر)`);
+            }
+          });
+        }
+
+        if (lines.join("").trim()){
+          $("detailsBox").style.display = "block";
+          $("errBox").textContent = lines.join("\n");
+        }
+      } catch(e){
+        $("loading").classList.remove("show");
+        clearTimeout(hardTimeout);
+
+        const aborted = (e && (e.name === "AbortError" || e.message === "AbortError"));
+        if (aborted){
+          setStatus("warn", "تست لغو شد", "درخواست لغو شد.", null);
+        } else {
+          setStatus("bad", "خطا در ارتباط", "اتصال به سرور یا API مشکل دارد.", null);
+          $("detailsBox").style.display = "block";
+          $("errBox").textContent = `Network error: ${e?.message || e}`;
+        }
+      } finally {
+        $("btnTest").disabled = false;
+        $("btnCancel").disabled = true;
+        controller = null;
+      }
+    }
+
+    // ---------- Events ----------
+    $("btnTest").addEventListener("click", () => runTest(false));
+    $("btnCancel").addEventListener("click", () => {
+      if (controller) controller.abort();
     });
-  });
-}
+    $("btnClear").addEventListener("click", () => {
+      $("primary").value = "";
+      $("secondary").value = "";
+      $("resultSplit").style.display = "none";
+      $("detailsBox").style.display = "none";
+      $("errBox").textContent = "";
+      setStatus(null, "آماده تست", "DNS را وارد کنید و شروع تست را بزنید.", null);
+    });
+    $("btnReloadDns").addEventListener("click", () => {
+      loadSuggestedDns();
+      showToast("لیست آپدیت شد ✅");
+    });
 
-function setAllTesting(){
-  bar.style.width = "0%";
-  clearError();
-
-  document.querySelectorAll(".box").forEach(b=>{
-    b.classList.remove("ok","fail","expanded");
-    b.classList.add("testing");
-  });
-
-  for(const k of GROUP_ORDER){
-    const st = document.getElementById(`state-${k}`);
-    if(st) st.textContent = "در حال تست…";
-    const p = document.getElementById(`p-${k}`); if(p) p.textContent = "Primary: …";
-    const s = document.getElementById(`s-${k}`); if(s) s.textContent = "Secondary: …";
-    const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال دریافت نتیجه…";
-  }
-}
-
-function renderDnsBlock(label, g){
-  if(!g){
-    return `
-      <div class="dBlock">
-        <div class="dTitle">
-          <span>${label}</span>
-          <span class="dMeta">وارد نشده</span>
-        </div>
-      </div>
-    `;
-  }
-
-  const meta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
-  const items = (g.items || []).map(it=>{
-    const tagCls = it.ok ? "ok" : "fail";
-    const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
-    const shown = shortenDomain(it.domain);
-    return `
-      <div class="dItem">
-        <div class="domain" title="${it.domain}">${shown}</div>
-        <span class="dTag ${tagCls}">${tagTxt}</span>
-      </div>
-    `;
-  }).join("");
-
-  return `
-    <div class="dBlock">
-      <div class="dTitle">
-        <span>${label}</span>
-        <span class="dMeta">${meta}</span>
-      </div>
-      ${items}
-    </div>
-  `;
-}
-
-function renderGroup(key, gp, gs){
-  const box = document.getElementById(`box-${key}`);
-  const stateEl = document.getElementById(`state-${key}`);
-  const pEl = document.getElementById(`p-${key}`);
-  const sEl = document.getElementById(`s-${key}`);
-  const details = document.getElementById(`details-${key}`);
-
-  const overallOk = (gp && gp.status === "ok") || (gs && gs.status === "ok");
-
-  box.classList.remove("testing");
-  box.classList.add(overallOk ? "ok" : "fail");
-
-  stateEl.textContent = overallOk ? "قابل استفاده ✅" : "مشکل دارد ❌";
-
-  pEl.textContent = gp ? `Primary: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "Primary: -";
-  sEl.textContent = gs ? `Secondary: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : "Secondary: -";
-
-  details.innerHTML = `
-    ${renderDnsBlock("Primary DNS", gp)}
-    ${renderDnsBlock("Secondary DNS", gs)}
-  `;
-}
-
-function clearTimers(){
-  if(hardTimeoutId) clearTimeout(hardTimeoutId);
-  if(softTimeoutId) clearTimeout(softTimeoutId);
-  hardTimeoutId = null;
-  softTimeoutId = null;
-}
-
-function cancelRequest(reason){
-  try{
-    if(currentController) currentController.abort();
-  } catch(e){}
-  currentController = null;
-  clearTimers();
-  hideLoader();
-  bar.style.width = "100%";
-  showError(reason || "تست متوقف شد.");
-  btn.disabled = false;
-}
-
-(function init(){
-  const templates = [
-    { key:"xbox", title:"سرورهای Xbox", icon:"🎮" },
-    { key:"playstation", title:"سرورهای PlayStation", icon:"🎮" },
-    { key:"games", title:"سرور بازی‌های پرطرفدار", icon:"🔥" },
-    { key:"international", title:"سرورهای بین‌المللی", icon:"🌍" },
-    { key:"internal", title:"سرورهای داخلی", icon:"🇮🇷" },
-  ];
-  buildCards(templates);
-})();
-
-cancelBtn.onclick = ()=> cancelRequest("تست متوقف شد.");
-
-btn.onclick = async ()=>{
-  clearError();
-  clearTimers();
-
-  const p = normalizeDigits(primary.value.trim());
-  const s = normalizeDigits(secondary.value.trim());
-
-  if(!p || !looksLikeIp(p)){
-    showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8");
-    return;
-  }
-  if(s && !looksLikeIp(s)){
-    showError("Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.");
-    return;
-  }
-  if(s && s === p){
-    showError("Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.");
-    return;
-  }
-
-  btn.disabled = true;
-  setAllTesting();
-  showLoader("در حال آماده‌سازی هستیم…");
-
-  softTimeoutId = setTimeout(()=> loaderExtra.classList.add("show"), 20000);
-  hardTimeoutId = setTimeout(()=> cancelRequest("خطا در سرور"), 120000);
-
-  const stop = fakeProgress();
-  currentController = new AbortController();
-
-  try{
-    setLoaderText("در حال تست سرورهای Xbox هستیم…");
-    await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرورهای PlayStation هستیم…");
-    await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرور بازی‌های پرطرفدار هستیم…");
-    await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرورهای بین‌المللی هستیم…");
-    await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرورهای داخلی هستیم…");
-
-    const url = `/api/test?primary=${encodeURIComponent(p)}${s ? `&secondary=${encodeURIComponent(s)}` : ""}`;
-    const r = await fetch(url, { cache:"no-store", signal: currentController.signal });
-    const j = await r.json();
-
-    stop();
-    bar.style.width = "100%";
-    clearTimers();
-    currentController = null;
-
-    if(!j.ok){
-      hideLoader();
-      showError(friendlyError(j.error));
-      btn.disabled = false;
-      return;
-    }
-
-    // ✅ اگر DNS عملاً هیچ دامنه‌ای رو resolve نکرد
-    const primaryOk = j.results?.primary?.dnsOk !== false;
-    const secondaryOk = j.results?.secondary ? (j.results.secondary.dnsOk !== false) : true;
-
-    if(!primaryOk && !secondaryOk){
-      hideLoader();
-      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
-      btn.disabled = false;
-      return;
-    }
-
-    // اگر فقط یکی مشکل داشت، پیام رو نمایش می‌دیم ولی نتیجه‌ها هم میاد
-    if(!primaryOk || (j.results?.secondary && !secondaryOk)){
-      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
-    }
-
-    const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
-    const secondaryGroups = Object.fromEntries((j.results?.secondary?.groups || []).map(g=>[g.key, g]));
-
-    for(const key of GROUP_ORDER){
-      const gp = primaryGroups[key] || null;
-      const gs = (j.results?.secondary ? (secondaryGroups[key] || null) : null);
-      renderGroup(key, gp, gs);
-      await new Promise(r=>setTimeout(r, 120));
-    }
-
-    setLoaderText("تست کامل شد ✅");
-    await new Promise(r=>setTimeout(r, 220));
-    hideLoader();
-
-  } catch(e){
-    stop();
-    bar.style.width = "100%";
-    clearTimers();
-
-    if(e && e.name === "AbortError"){
-      hideLoader();
-      showError("تست متوقف شد.");
-      btn.disabled = false;
-      return;
-    }
-
-    hideLoader();
-    showError("خطا در سرور");
-  }
-
-  setTimeout(()=>btn.disabled=false, 350);
-};
-</script>
+    // Init
+    loadSuggestedDns();
+  </script>
 </body>
 </html>
