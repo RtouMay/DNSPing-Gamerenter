@@ -6,694 +6,596 @@
 <title>تست DNS گیم رنتر</title>
 
 <style>
-@font-face{
-  font-family: "YekanBakh";
-  src: url("YekanBakh-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face{
-  font-family: "YekanBakh";
-  src: url("YekanBakh-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+  :root{
+    --bgA:#0d1023;
+    --bgB:#0b1328;
+    --cardA: rgba(15, 22, 46, .72);
+    --cardB: rgba(12, 18, 40, .65);
+    --line: rgba(255,255,255,.07);
+    --txt:#eaf0ff;
+    --muted: rgba(234,240,255,.62);
+    --good:#2ee59d;
+    --bad:#ff4d6d;
+    --warn:#ffcc00;
+    --accent:#7aa2ff;
 
-:root{
-  --bg:#070a12;
-  --border:#1b2444;
-  --text:#e5e7eb;
-  --muted:#9ca3af;
-  --red:#e11d48;
-  --red2:#fb7185;
-  --ok:#22c55e;
-  --bad:#ef4444;
-}
+    --r1: 22px;
+    --r2: 16px;
+    --shadow: 0 18px 60px rgba(0,0,0,.45);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  }
 
-*{ box-sizing:border-box; font-family:"YekanBakh", system-ui, sans-serif; }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: var(--font);
+    color: var(--txt);
+    background:
+      radial-gradient(700px 450px at 80% 0%, rgba(122,162,255,.18), transparent 60%),
+      radial-gradient(700px 450px at 20% 0%, rgba(255,77,109,.12), transparent 60%),
+      radial-gradient(800px 600px at 50% 110%, rgba(46,229,157,.12), transparent 60%),
+      linear-gradient(180deg, var(--bgA), var(--bgB));
+    display:flex;
+    justify-content:center;
+    padding: 18px 14px 48px;
+  }
 
-body{
-  margin:0;
-  color:var(--text);
-  background:
-    radial-gradient(900px 500px at 10% 0%, rgba(225,29,72,.18), transparent 45%),
-    radial-gradient(900px 500px at 90% 10%, rgba(251,113,133,.10), transparent 50%),
-    radial-gradient(1200px 700px at 50% 110%, rgba(34,197,94,.06), transparent 50%),
-    var(--bg);
-}
+  .wrap{
+    width: min(520px, 100%);
+    display:flex;
+    flex-direction:column;
+    gap: 14px;
+  }
 
-.container{
-  min-height:100vh;
-  display:grid;
-  place-items:center;
-  padding:16px;
-}
+  .top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 12px;
+    padding: 14px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--r1);
+    background: linear-gradient(180deg, rgba(18,26,54,.85), rgba(18,26,54,.55));
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+  }
 
-.card{
-  width:100%;
-  max-width:560px;
-  border-radius:22px;
-  background:linear-gradient(180deg, rgba(18,24,43,.92), rgba(14,20,39,.92));
-  border:1px solid rgba(27,36,68,.92);
-  box-shadow:
-    0 24px 80px rgba(0,0,0,.65),
-    0 0 0 1px rgba(225,29,72,.10) inset,
-    0 0 50px rgba(225,29,72,.06);
-  padding:18px;
-  position:relative;
-  overflow:hidden;
-}
+  .pill{
+    font-family: var(--mono);
+    font-size: 12px;
+    color: rgba(234,240,255,.9);
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.08);
+    padding: 8px 10px;
+    border-radius: 999px;
+    max-width: 58%;
+    overflow:hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-.card:before{
-  content:"";
-  position:absolute; inset:-2px;
-  background:radial-gradient(600px 220px at 50% 0%, rgba(225,29,72,.20), transparent 60%);
-  pointer-events:none;
-}
-.card:after{
-  content:"";
-  position:absolute; inset:-45%;
-  background:
-    radial-gradient(600px 260px at 20% 15%, rgba(225,29,72,.18), transparent 60%),
-    radial-gradient(500px 240px at 85% 25%, rgba(251,113,133,.16), transparent 65%),
-    radial-gradient(700px 320px at 55% 90%, rgba(225,29,72,.08), transparent 60%),
-    linear-gradient(120deg, rgba(225,29,72,.10), transparent 40%, rgba(251,113,133,.08));
-  filter: blur(18px);
-  opacity:.75;
-  mix-blend-mode: screen;
-  animation: videoGlow 6s ease-in-out infinite;
-  pointer-events:none;
-  z-index:0;
-}
-@keyframes videoGlow{
-  0%{transform:translate3d(-2%,-2%,0) scale(1)}
-  50%{transform:translate3d(2%,1%,0) scale(1.04)}
-  100%{transform:translate3d(-2%,-2%,0) scale(1)}
-}
+  .title{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    font-weight: 900;
+    font-size: 15px;
+  }
 
-.header, label, .inputs, .helper, button, .progress, .grid, .footer, .errorBox, .loader{
-  position:relative; z-index:2;
-}
+  .logo{
+    width: 38px;
+    height: 38px;
+    border-radius: 14px;
+    background:
+      radial-gradient(14px 14px at 30% 30%, rgba(255,255,255,.35), transparent 65%),
+      linear-gradient(135deg, rgba(122,162,255,.95), rgba(46,229,157,.9));
+    box-shadow: 0 10px 24px rgba(122,162,255,.18);
+    position:relative;
+    flex: 0 0 auto;
+  }
+  .logo::after{
+    content:"";
+    position:absolute;
+    inset: 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.35);
+    opacity:.65;
+  }
 
-/* Header */
-.header{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:10px;
-  padding-top:6px;
-  padding-bottom:8px;
-}
-.header img{
-  width:110px;
-  height:auto;
-  display:block;
-  filter:drop-shadow(0 14px 30px rgba(225,29,72,.34));
-}
-.header .brandName{
-  font-weight:700;
-  font-size:15px;
-  line-height:1.4;
-}
+  .sub{
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
 
-/* Form */
-label{ display:block; color:var(--muted); font-size:13px; margin:10px 0 8px; }
+  .card{
+    border: 1px solid var(--line);
+    border-radius: var(--r1);
+    background: linear-gradient(180deg, rgba(18,26,54,.72), rgba(18,26,54,.42));
+    box-shadow: var(--shadow);
+    padding: 14px;
+    backdrop-filter: blur(10px);
+  }
 
-.inputs{
-  display:grid;
-  grid-template-columns: 1fr;
-  gap:10px;
-}
+  .form{
+    display:flex;
+    flex-direction:column;
+    gap: 10px;
+  }
 
-.inputWrap{ position:relative; }
-input{
-  width:100%;
-  padding:14px 14px;
-  border-radius:16px;
-  border:1px solid rgba(27,36,68,.95);
-  background:rgba(11,16,34,.92);
-  color:var(--text);
-  font-size:15px;
-  outline:none;
-  transition:.2s;
-}
-input:focus{
-  border-color:rgba(225,29,72,.92);
-  box-shadow:0 0 0 4px rgba(225,29,72,.18);
-}
+  .row{
+    display:flex;
+    gap: 10px;
+  }
 
-.helper{
-  margin-top:8px;
-  color: var(--muted);
-  font-size:12px;
-  line-height: 1.9;
-}
+  .field{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap: 6px;
+  }
 
-/* Button */
-button{
-  width:100%;
-  margin-top:12px;
-  padding:14px 14px;
-  border-radius:18px;
-  border:none;
-  color:white;
-  font-size:15px;
-  cursor:pointer;
-  background:linear-gradient(135deg, var(--red), var(--red2));
-  box-shadow:0 12px 30px rgba(225,29,72,.22);
-  transition:.2s;
-  font-weight:700;
-}
-button:hover{ transform:translateY(-1px) }
-button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
+  label{
+    font-size: 12px;
+    color: var(--muted);
+  }
 
-.progress{
-  margin-top:12px;
-  height:10px;
-  border-radius:999px;
-  background:rgba(11,16,34,.92);
-  border:1px solid rgba(27,36,68,.95);
-  overflow:hidden;
-}
-.progress i{
-  display:block;
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg, var(--red), var(--red2));
-  transition:width .35s cubic-bezier(.2,.8,.2,1);
-}
+  input{
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(9,12,26,.42);
+    padding: 12px 12px;
+    color: var(--txt);
+    outline: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    direction: ltr;
+    text-align: left;
+  }
+  input:focus{
+    border-color: rgba(122,162,255,.55);
+    box-shadow: 0 0 0 4px rgba(122,162,255,.10);
+  }
 
-/* Error */
-.errorBox{
-  margin-top:10px;
-  padding:12px 12px;
-  border-radius:16px;
-  border:1px dashed rgba(239,68,68,.62);
-  background: rgba(11,16,34,.90);
-  color:#fee2e2;
-  font-size:13px;
-  display:none;
-  line-height:1.9;
-}
-.errorBox.show{ display:block; }
+  .btns{
+    display:flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items:center;
+    justify-content:flex-start;
+  }
 
-/* Cards */
-.grid{
-  margin-top:14px;
-  display:grid;
-  grid-template-columns: 1fr;
-  gap:10px;
-}
+  .btn{
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.06);
+    color: var(--txt);
+    padding: 11px 14px;
+    border-radius: 999px;
+    cursor:pointer;
+    font-weight: 900;
+    font-size: 13px;
+    transition: .15s;
+    user-select:none;
+  }
+  .btn:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+  }
+  .btn.primary{
+    background: linear-gradient(135deg, rgba(122,162,255,.95), rgba(46,229,157,.85));
+    border-color: rgba(255,255,255,.14);
+    color: #0b1022;
+  }
+  .btn.danger{
+    background: rgba(255,77,109,.12);
+    border-color: rgba(255,77,109,.25);
+    color: #ffd2da;
+  }
+  .btn.ghost{
+    background: transparent;
+    border-color: rgba(255,255,255,.10);
+    color: var(--muted);
+  }
 
-.box{
-  background: rgba(11,16,34,.92);
-  border:1px solid rgba(27,36,68,.95);
-  border-radius:18px;
-  padding:12px;
-  transition:.2s;
-  overflow:hidden;
-}
-.box.ok{ border-color: rgba(34,197,94,.55); box-shadow: 0 0 0 3px rgba(34,197,94,.08); }
-.box.fail{ border-color: rgba(239,68,68,.55); box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
-.box.testing{ border-color: rgba(225,29,72,.35); box-shadow: 0 0 0 3px rgba(225,29,72,.06); }
+  .note{
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border: 1px dashed rgba(255,255,255,.14);
+    background: rgba(255,255,255,.03);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
 
-.boxHead{
-  display:grid;
-  grid-template-columns: 1fr auto;
-  gap:10px;
-  align-items:center;
-}
+  .status{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    padding: 12px 12px;
+    border-radius: var(--r2);
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(9,12,26,.35);
+  }
 
-.boxTitle{
-  display:grid;
-  grid-template-columns: 34px 1fr;
-  gap:10px;
-  align-items:center;
-  min-height:34px;
-}
-.icon{
-  width:34px; height:34px;
-  display:grid; place-items:center;
-  border-radius:12px;
-  border:1px solid rgba(27,36,68,.85);
-  background: rgba(7,10,18,.35);
-}
-.boxTitleText{
-  font-weight:700;
-  font-size:14px;
-  line-height:1.3;
-}
+  .stL{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
 
-.state{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:6px;
-  font-size:12px;
-  color: var(--muted);
-  min-width: 126px;
-}
+  .dot{
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.18);
+    box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+  }
+  .dot.good{ background: var(--good); box-shadow: 0 0 0 4px rgba(46,229,157,.12); }
+  .dot.bad{ background: var(--bad); box-shadow: 0 0 0 4px rgba(255,77,109,.12); }
+  .dot.warn{ background: var(--warn); box-shadow: 0 0 0 4px rgba(255,204,0,.10); }
 
-.stateTop{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
+  .stT{
+    font-weight: 900;
+    font-size: 13px;
+  }
+  .stS{
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 2px;
+  }
 
-.light{
-  width:10px; height:10px; border-radius:50%;
-  background: rgba(156,163,175,.45);
-  transition:.2s;
-}
+  .kpi{
+    display:flex;
+    gap: 8px;
+    align-items:baseline;
+    font-family: var(--mono);
+  }
+  .kpi strong{ font-size: 14px; }
+  .kpi span{ font-size: 11px; color: var(--muted); }
 
-.box.testing .light{
-  background: linear-gradient(180deg, var(--red), var(--red2));
-  box-shadow: 0 0 16px rgba(225,29,72,.45);
-  animation: blink 1s ease-in-out infinite;
-}
-.box.ok .light{ background: var(--ok); box-shadow: 0 0 16px rgba(34,197,94,.45); }
-.box.fail .light{ background: var(--bad); box-shadow: 0 0 16px rgba(239,68,68,.45); }
+  .loading{
+    display:none;
+    align-items:center;
+    gap: 12px;
+    padding: 12px 12px;
+    border-radius: var(--r2);
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(9,12,26,.35);
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .loading.show{ display:flex; }
+  .spinner{
+    width: 16px; height: 16px;
+    border-radius: 999px;
+    border: 2px solid rgba(255,255,255,.14);
+    border-top-color: rgba(122,162,255,.9);
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-@keyframes blink{
-  0%,100%{ opacity:.55; transform:scale(.92); }
-  50%{ opacity:1; transform:scale(1); }
-}
+  .groups{
+    display:flex;
+    flex-direction:column;
+    gap: 12px;
+    margin-top: 12px;
+  }
 
-.badges{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  justify-content:flex-end;
-}
-.pill{
-  font-size:11px;
-  padding:3px 8px;
-  border-radius:999px;
-  border:1px solid rgba(27,36,68,.82);
-  background: rgba(7,10,18,.35);
-  color: var(--muted);
-  white-space:nowrap;
-}
+  .gCard{
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: var(--r1);
+    background: linear-gradient(180deg, rgba(10,14,30,.55), rgba(10,14,30,.35));
+    padding: 12px;
+  }
 
-.actions{ margin-top:10px; }
-.toggleBtn{
-  width:100%;
-  border:none;
-  cursor:pointer;
-  padding:10px 12px;
-  border-radius:14px;
-  background: rgba(7,10,18,.35);
-  border: 1px solid rgba(27,36,68,.75);
-  color: rgba(251,113,133,.98);
-  font-size:12px;
-  font-weight:700;
-  transition:.2s;
-}
-.toggleBtn:hover{
-  border-color: rgba(225,29,72,.55);
-  box-shadow: 0 0 0 3px rgba(225,29,72,.10);
-}
+  .gHead{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
 
-.details{
-  margin-top:10px;
-  padding-top:10px;
-  border-top:1px solid rgba(27,36,68,.55);
-  display:none;
-  color: var(--muted);
-  font-size:12px;
-  line-height:1.9;
-}
-.box.expanded .details{ display:block; }
+  .gR{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
 
-.dBlock{
-  margin-top:10px;
-  padding:10px 10px;
-  border-radius:14px;
-  border:1px solid rgba(27,36,68,.65);
-  background: rgba(7,10,18,.22);
-}
-.dTitle{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  font-weight:700;
-  color: var(--text);
-  margin-bottom:8px;
-}
-.dMeta{ color: var(--muted); font-weight:400; font-size:11px; }
+  .gIcon{
+    width: 36px;
+    height: 36px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.05);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size: 18px;
+    flex: 0 0 auto;
+  }
 
-.dItem{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding:6px 0;
-  border-bottom:1px solid rgba(27,36,68,.35);
-}
-.dItem:last-child{ border-bottom:none; }
+  .gTitle{
+    font-weight: 900;
+    font-size: 14px;
+  }
 
-.domain{
-  direction:ltr;
-  text-align:left;
-  font-weight:700;
-  color: var(--text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size:12px;
-  max-width: 68%;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.dTag{
-  font-size:11px;
-  padding:3px 8px;
-  border-radius:999px;
-  border:1px solid rgba(27,36,68,.8);
-  background: rgba(7,10,18,.35);
-  color: var(--muted);
-  white-space:nowrap;
-}
-.dTag.ok{ border-color: rgba(34,197,94,.55); color:#d1fae5; }
-.dTag.fail{ border-color: rgba(239,68,68,.55); color:#fee2e2; }
+  .gStat{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+  .gPill{
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.05);
+    color: rgba(234,240,255,.85);
+    white-space: nowrap;
+  }
+  .gPill.bad{
+    border-color: rgba(255,77,109,.35);
+    background: rgba(255,77,109,.10);
+    color: #ffd2da;
+  }
+  .gPill.good{
+    border-color: rgba(46,229,157,.30);
+    background: rgba(46,229,157,.08);
+    color: #bfffe6;
+  }
+  .gPill.warn{
+    border-color: rgba(255,204,0,.30);
+    background: rgba(255,204,0,.08);
+    color: #fff4c2;
+  }
 
-/* Loader */
-.loader{
-  position:absolute;
-  inset:0;
-  z-index:10;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  background: rgba(0,0,0,.78);
-  backdrop-filter: blur(10px);
-}
-.loader.show{ display:flex; animation: fadeIn .2s ease; }
-@keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+  details{
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.02);
+    border-radius: 16px;
+    padding: 10px 10px;
+  }
 
-.loaderBox{
-  width:min(520px, 92%);
-  text-align:center;
-  padding:18px 16px;
-  border-radius:22px;
-  border:1px solid rgba(225,29,72,.28);
-  background: rgba(11,16,34,.62);
-  box-shadow: 0 18px 80px rgba(0,0,0,.6);
-}
+  summary{
+    cursor:pointer;
+    font-weight: 900;
+    color: rgba(234,240,255,.8);
+    font-size: 12px;
+    list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
 
-.spinner{
-  width:110px;
-  height:110px;
-  margin: 6px auto 10px;
-  position:relative;
-  display:grid;
-  place-items:center;
-  filter: drop-shadow(0 18px 40px rgba(225,29,72,.30));
-}
-.spinner:before{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:50%;
-  background:
-    conic-gradient(from 210deg,
-      rgba(225,29,72,0) 0deg,
-      rgba(225,29,72,0) 210deg,
-      rgba(225,29,72,1) 270deg,
-      rgba(251,113,133,1) 310deg,
-      rgba(225,29,72,0) 360deg
-    );
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 0);
-  mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 0);
-  opacity:.95;
-  animation: spin 1.0s linear infinite;
-}
-.spinner:after{
-  content:"";
-  position:absolute;
-  inset:14px;
-  border-radius:50%;
-  background: rgba(0,0,0,.28);
-  border:1px solid rgba(255,255,255,.06);
-  box-shadow: 0 0 0 1px rgba(225,29,72,.10) inset;
-}
-@keyframes spin{ to{ transform: rotate(360deg); } }
+  .dWrap{
+    margin-top: 10px;
+    display:flex;
+    flex-direction:column;
+    gap: 10px;
+  }
 
-.loaderTitle{ font-weight:700; font-size:15px; margin-top:4px; }
-.loaderStep{ margin-top:6px; color:var(--muted); font-size:13px; line-height:1.8; }
+  .dBlock{
+    border: 1px solid rgba(255,255,255,.06);
+    background: rgba(9,12,26,.35);
+    border-radius: 16px;
+    padding: 10px 10px;
+  }
 
-.loaderExtra{
-  margin-top:10px;
-  display:none;
-  gap:10px;
-  justify-content:center;
-  align-items:center;
-  flex-direction:column;
-}
-.loaderExtra.show{ display:flex; }
+  .dTitle{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-weight: 900;
+    font-size: 12px;
+  }
 
-.loaderHint{
-  color: var(--muted);
-  font-size:12px;
-  line-height:1.8;
-}
-.cancelBtn{
-  width:min(260px, 86%);
-  border:none;
-  cursor:pointer;
-  padding:12px 14px;
-  border-radius:16px;
-  background: linear-gradient(135deg, var(--bad), rgba(239,68,68,.72));
-  color:white;
-  font-weight:700;
-  font-size:14px;
-  box-shadow: 0 12px 30px rgba(239,68,68,.20);
-}
+  .dMeta{
+    color: var(--muted);
+    font-weight: 800;
+    font-size: 12px;
+  }
 
-.footer{
-  margin-top:12px;
-  text-align:center;
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.9;
-}
+  .dItem{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    padding: 8px 8px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.06);
+    background: rgba(255,255,255,.02);
+  }
+
+  .domain{
+    direction:ltr;
+    text-align:left;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: rgba(234,240,255,.88);
+    max-width: 72%;
+    overflow:hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dTag{
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.05);
+    white-space: nowrap;
+  }
+  .dTag.ok{
+    border-color: rgba(46,229,157,.35);
+    background: rgba(46,229,157,.08);
+    color: #bfffe6;
+  }
+  .dTag.fail{
+    border-color: rgba(255,77,109,.35);
+    background: rgba(255,77,109,.10);
+    color: #ffd2da;
+  }
+
+  .toast{
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 999;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(9,12,26,.65);
+    backdrop-filter: blur(10px);
+    color: rgba(234,240,255,.92);
+    font-size: 12px;
+    font-weight: 900;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events:none;
+    transition: .2s;
+  }
+  .toast.show{
+    opacity: 1;
+    transform: translateY(0);
+  }
 </style>
 </head>
 
 <body>
-<div class="container">
-  <div class="card">
+  <div class="wrap">
+    <div class="top">
+      <div class="pill">api/test?primary=1.1.1.1&secondary=8.8.8.8/</div>
+      <div>
+        <div class="title"><span>(Game Renter)</span> تست سرعت DNS برای گیم <span class="logo" aria-hidden="true"></span></div>
+        <div class="sub">این ابزار زمان پاسخ DNS برای مجموعه‌ای از سرویس‌های گیم/بین‌المللی/داخلی را می‌سنجد.</div>
+      </div>
+    </div>
 
-    <div class="loader" id="loader">
-      <div class="loaderBox">
-        <div class="spinner" aria-hidden="true"></div>
-        <div class="loaderTitle">تست DNS گیم رنتر</div>
-        <div class="loaderStep" id="loaderText">در حال آماده‌سازی هستیم…</div>
+    <div class="card">
+      <div class="form">
+        <div class="row">
+          <div class="field">
+            <label for="primary">DNS اصلی (Primary)</label>
+            <input id="primary" placeholder="مثلاً 1.1.1.1" inputmode="numeric" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="secondary">DNS دوم (Secondary) (اختیاری)</label>
+            <input id="secondary" placeholder="مثلاً 8.8.8.8" inputmode="numeric" autocomplete="off">
+          </div>
+        </div>
 
-        <div class="loaderExtra" id="loaderExtra">
-          <div class="loaderHint">لطفاً کمی صبور باشید…</div>
-          <button class="cancelBtn" id="cancelBtn" type="button">انصراف</button>
+        <div class="btns">
+          <button id="btnTest" class="btn primary">شروع تست</button>
+          <button id="btnCancel" class="btn danger" disabled>لغو</button>
+          <button id="btnClear" class="btn ghost">پاک کردن</button>
+        </div>
+
+        <div class="note">
+          نکته: این تست «پینگ واقعی به سرور بازی» نیست؛ سرعت پاسخ DNS را می‌سنجد (Resolve time).
+          اگر DNS شما در بعضی گروه‌ها FAIL بدهد، ممکن است به خاطر فیلترینگ/تحریم/مسیر شبکه باشد.
         </div>
       </div>
     </div>
 
-    <div class="header">
-      <img src="logo.png" alt="Game Renter">
-      <div class="brandName">تست DNS گیم رنتر</div>
-    </div>
-
-    <label>DNS را وارد کنید</label>
-    <div class="inputs">
-      <div class="inputWrap">
-        <input id="primary" inputmode="decimal" autocomplete="off"
-               placeholder="Primary DNS (مثل 8.8.8.8)">
+    <div class="card">
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div id="loadingText">در حال آماده‌سازی…</div>
       </div>
-      <div class="inputWrap">
-        <input id="secondary" inputmode="decimal" autocomplete="off"
-               placeholder="Secondary DNS (اختیاری)">
+
+      <div class="status" id="statusBar">
+        <div class="stL">
+          <div class="dot" id="statusDot"></div>
+          <div>
+            <div class="stT" id="statusTitle">آماده تست</div>
+            <div class="stS" id="statusSub">DNS را وارد کنید و شروع تست را بزنید.</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <strong id="kpiValue">—</strong>
+          <span>(ms) میانگین</span>
+        </div>
       </div>
+
+      <div class="groups" id="groups"></div>
     </div>
-
-    <div class="helper">
-
-    </div>
-
-    <button id="btn">شروع تست</button>
-
-    <div class="progress"><i id="bar"></i></div>
-
-    <div class="errorBox" id="err"></div>
-
-    <div class="grid" id="grid"></div>
-
-    <div class="footer">
-      نتیجه‌ها بر اساس Resolve شدن دامنه‌های کلیدی هر سرویس است و ممکن است با اینترنت/منطقه فرق کند.
-    </div>
-
   </div>
-</div>
+
+  <div class="toast" id="toast">کپی شد ✅</div>
 
 <script>
-const btn = document.getElementById('btn');
-const primary = document.getElementById('primary');
-const secondary = document.getElementById('secondary');
-const bar = document.getElementById('bar');
-const err = document.getElementById('err');
+const primary = document.getElementById("primary");
+const secondary = document.getElementById("secondary");
+const btnTest = document.getElementById("btnTest");
+const btnCancel = document.getElementById("btnCancel");
+const btnClear = document.getElementById("btnClear");
+const loading = document.getElementById("loading");
+const loadingText = document.getElementById("loadingText");
+const statusDot = document.getElementById("statusDot");
+const statusTitle = document.getElementById("statusTitle");
+const statusSub = document.getElementById("statusSub");
+const kpiValue = document.getElementById("kpiValue");
+const groupsEl = document.getElementById("groups");
+const toast = document.getElementById("toast");
 
-const loader = document.getElementById('loader');
-const loaderText = document.getElementById('loaderText');
-const loaderExtra = document.getElementById('loaderExtra');
-const cancelBtn = document.getElementById('cancelBtn');
-
-const grid = document.getElementById('grid');
-const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
-
-let currentController = null;
+let controller = null;
 let hardTimeoutId = null;
-let softTimeoutId = null;
 
-function normalizeDigits(input){
+function showToast(text){
+  toast.textContent = text || "کپی شد ✅";
+  toast.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>toast.classList.remove("show"), 1300);
+}
+
+function normalizeDigits(str){
   const map = {
     "۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9",
     "٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9",
     "٫":".","٬":"","،":"."," ":""
   };
-  return (input||"").toString().trim().split("").map(ch => map[ch] ?? ch).join("");
+  return (str || "").toString().trim().split("").map(ch => map[ch] ?? ch).join("");
 }
-function looksLikeIp(ip){
+
+function isValidIPv4(ip){
   ip = normalizeDigits(ip);
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip);
+  if(!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return false;
+  const parts = ip.split(".").map(Number);
+  return parts.every(x => Number.isFinite(x) && x >= 0 && x <= 255);
 }
 
-function showError(msg){
-  err.textContent = msg;
-  err.classList.add('show');
-}
-function clearError(){
-  err.textContent = '';
-  err.classList.remove('show');
-}
-
-function showLoader(text){
-  loaderText.textContent = text;
-  loaderExtra.classList.remove('show');
-  loader.classList.add('show');
-}
-function setLoaderText(text){ loaderText.textContent = text; }
-function hideLoader(){ loader.classList.remove('show'); loaderExtra.classList.remove('show'); }
-
-function fakeProgress(){
-  let p = 6;
-  bar.style.width = '6%';
-  const t = setInterval(()=>{
-    p = Math.min(92, p + Math.random()*10);
-    bar.style.width = Math.floor(p) + '%';
-  }, 220);
-  return ()=>clearInterval(t);
+function setStatus(kind, title, sub, avg){
+  statusDot.classList.remove("good","bad","warn");
+  if (kind) statusDot.classList.add(kind);
+  statusTitle.textContent = title || "";
+  statusSub.textContent = sub || "";
+  kpiValue.textContent = (avg === null || avg === undefined) ? "—" : String(avg);
 }
 
-function friendlyError(apiError){
-  switch(apiError){
-    case "invalid_primary":
-      return "Primary DNS معتبر نیست. نمونه: 8.8.8.8";
-    case "invalid_secondary":
-      return "Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.";
-    case "private_primary":
-      return "Primary DNS خصوصی/لوکال است. بهتر است یک DNS عمومی وارد کنید.";
-    case "private_secondary":
-      return "Secondary DNS خصوصی/لوکال است. اگر وارد می‌کنید، بهتر است عمومی باشد.";
-    case "same_dns":
-      return "Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.";
-    case "server_error":
-      return "یک مشکل سمت سرور پیش آمد. لطفاً دوباره امتحان کنید.";
-    default:
-      return "یک خطا رخ داد. لطفاً دوباره امتحان کنید.";
-  }
+function shortenDomain(s){
+  if (!s) return "";
+  if (s.length <= 22) return s;
+  return s.slice(0, 10) + "…" + s.slice(-10);
 }
 
-function shortenDomain(d){
-  d = String(d || "");
-  if(d.length <= 26) return d;
-  const start = d.slice(0, 12);
-  const end = d.slice(-10);
-  return `${start}…${end}`;
-}
-
-function buildCards(templateGroups){
-  grid.innerHTML = templateGroups.map(g => `
-    <div class="box testing" id="box-${g.key}">
-      <div class="boxHead">
-        <div class="boxTitle">
-          <span class="icon">${g.icon}</span>
-          <div class="boxTitleText">${g.title}</div>
-        </div>
-        <div class="state">
-          <div class="stateTop">
-            <span class="light"></span>
-            <span id="state-${g.key}">آماده</span>
-          </div>
-          <div class="badges">
-            <span class="pill" id="p-${g.key}">Primary: -</span>
-            <span class="pill" id="s-${g.key}">Secondary: -</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات بیشتر</button>
-      </div>
-
-      <div class="details" id="details-${g.key}">
-        هنوز تست انجام نشده است.
-      </div>
-    </div>
-  `).join("");
-
-  grid.querySelectorAll(".toggleBtn").forEach(b=>{
-    b.addEventListener("click", ()=>{
-      const key = b.getAttribute("data-key");
-      const box = document.getElementById(`box-${key}`);
-      const open = b.getAttribute("data-open") === "1";
-      if(open){
-        box.classList.remove("expanded");
-        b.textContent = "جزئیات بیشتر";
-        b.setAttribute("data-open","0");
-      } else {
-        box.classList.add("expanded");
-        b.textContent = "بستن جزئیات";
-        b.setAttribute("data-open","1");
-      }
-    });
-  });
-}
-
-function setAllTesting(){
-  bar.style.width = "0%";
-  clearError();
-
-  document.querySelectorAll(".box").forEach(b=>{
-    b.classList.remove("ok","fail","expanded");
-    b.classList.add("testing");
-  });
-
-  for(const k of GROUP_ORDER){
-    const st = document.getElementById(`state-${k}`);
-    if(st) st.textContent = "در حال تست…";
-    const p = document.getElementById(`p-${k}`); if(p) p.textContent = "Primary: …";
-    const s = document.getElementById(`s-${k}`); if(s) s.textContent = "Secondary: …";
-    const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال دریافت نتیجه…";
-  }
-}
-
-function renderDnsBlock(label, g){
+/* ✅ FIXED: اگر DNS وارد شده ولی گروه نتیجه نداد، دیگه نمی‌گه "وارد نشده" */
+function renderDnsBlock(label, g, entered){
   if(!g){
     return `
       <div class="dBlock">
         <div class="dTitle">
           <span>${label}</span>
-          <span class="dMeta">وارد نشده</span>
+          <span class="dMeta">${entered ? "نتیجه دریافت نشد" : "وارد نشده"}</span>
         </div>
       </div>
     `;
@@ -723,166 +625,215 @@ function renderDnsBlock(label, g){
   `;
 }
 
-function renderGroup(key, gp, gs){
-  const box = document.getElementById(`box-${key}`);
-  const stateEl = document.getElementById(`state-${key}`);
-  const pEl = document.getElementById(`p-${key}`);
-  const sEl = document.getElementById(`s-${key}`);
-  const details = document.getElementById(`details-${key}`);
+function renderGroup(group, primaryData, secondaryData){
+  const card = document.createElement("div");
+  card.className = "gCard";
 
-  const overallOk = (gp && gp.status === "ok") || (gs && gs.status === "ok");
+  const head = document.createElement("div");
+  head.className = "gHead";
 
-  box.classList.remove("testing");
-  box.classList.add(overallOk ? "ok" : "fail");
+  const left = document.createElement("div");
+  left.className = "gR";
 
-  stateEl.textContent = overallOk ? "قابل استفاده ✅" : "مشکل دارد ❌";
+  const icon = document.createElement("div");
+  icon.className = "gIcon";
+  icon.textContent = group.icon || "🎮";
 
-  pEl.textContent = gp ? `Primary: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "Primary: -";
-  sEl.textContent = gs ? `Secondary: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : "Secondary: -";
+  const title = document.createElement("div");
+  title.className = "gTitle";
+  title.textContent = group.title;
 
-  details.innerHTML = `
-    ${renderDnsBlock("Primary DNS", gp)}
-    ${renderDnsBlock("Secondary DNS", gs)}
+  left.appendChild(icon);
+  left.appendChild(title);
+
+  const stat = document.createElement("div");
+  stat.className = "gStat";
+
+  const pEl = document.createElement("div");
+  pEl.className = "gPill";
+  const sEl = document.createElement("div");
+  sEl.className = "gPill";
+
+  const gp = primaryData?.groupsMap?.[group.key] || null;
+  const gs = secondaryData?.groupsMap?.[group.key] || null;
+
+  // متنِ pill ها همون منطق قبلی، فقط نمایش درست‌تر
+  pEl.textContent = gp ? `Primary: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "Primary: FAIL";
+  sEl.textContent = gs ? `Secondary: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : (secondary.value.trim() ? "Secondary: FAIL" : "Secondary: -");
+
+  if (!gp) pEl.classList.add("bad");
+  else if (gp.status === "fail") pEl.classList.add("bad");
+  else if (gp.avgMs != null && gp.avgMs <= 120) pEl.classList.add("good");
+  else pEl.classList.add("warn");
+
+  if (!secondary.value.trim()) {
+    // خالی است
+  } else if (!gs) sEl.classList.add("bad");
+  else if (gs.status === "fail") sEl.classList.add("bad");
+  else if (gs.avgMs != null && gs.avgMs <= 120) sEl.classList.add("good");
+  else sEl.classList.add("warn");
+
+  stat.appendChild(pEl);
+  stat.appendChild(sEl);
+
+  head.appendChild(left);
+  head.appendChild(stat);
+
+  const details = document.createElement("details");
+  const sum = document.createElement("summary");
+  sum.textContent = "بستن جزئیات";
+  details.open = true;
+
+  const dWrap = document.createElement("div");
+  dWrap.className = "dWrap";
+
+  /* ✅ FIXED CALLS: به‌جای "وارد نشده" وقتی نتیجه نیست، می‌گه "نتیجه دریافت نشد" */
+  dWrap.innerHTML = `
+    ${renderDnsBlock("Primary DNS", gp, true)}
+    ${renderDnsBlock("Secondary DNS", gs, Boolean(secondary.value.trim()))}
   `;
+
+  details.appendChild(sum);
+  details.appendChild(dWrap);
+
+  card.appendChild(head);
+  card.appendChild(details);
+
+  return card;
 }
 
 function clearTimers(){
   if(hardTimeoutId) clearTimeout(hardTimeoutId);
-  if(softTimeoutId) clearTimeout(softTimeoutId);
   hardTimeoutId = null;
-  softTimeoutId = null;
 }
 
-function cancelRequest(reason){
-  try{
-    if(currentController) currentController.abort();
-  } catch(e){}
-  currentController = null;
-  clearTimers();
-  hideLoader();
-  bar.style.width = "100%";
-  showError(reason || "تست متوقف شد.");
-  btn.disabled = false;
+function setLoading(on, text){
+  if(on){
+    loading.classList.add("show");
+    loadingText.textContent = text || "در حال تست…";
+  } else {
+    loading.classList.remove("show");
+  }
 }
 
-(function init(){
-  const templates = [
-    { key:"xbox", title:"سرورهای Xbox", icon:"🎮" },
-    { key:"playstation", title:"سرورهای PlayStation", icon:"🎮" },
-    { key:"games", title:"سرور بازی‌های پرطرفدار", icon:"🔥" },
-    { key:"international", title:"سرورهای بین‌المللی", icon:"🌍" },
-    { key:"internal", title:"سرورهای داخلی", icon:"🇮🇷" },
-  ];
-  buildCards(templates);
-})();
+function buildGroupsMap(result){
+  const map = {};
+  const groups = result?.groups || [];
+  for (const g of groups){
+    map[g.key] = g;
+  }
+  return map;
+}
 
-cancelBtn.onclick = ()=> cancelRequest("تست متوقف شد.");
+async function runTest(){
+  const p = normalizeDigits(primary.value);
+  const s = normalizeDigits(secondary.value);
 
-btn.onclick = async ()=>{
-  clearError();
-  clearTimers();
-
-  const p = normalizeDigits(primary.value.trim());
-  const s = normalizeDigits(secondary.value.trim());
-
-  if(!p || !looksLikeIp(p)){
-    showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8");
+  if(!isValidIPv4(p)){
+    setStatus("bad", "ورودی اشتباه", "DNS اصلی معتبر نیست.", null);
     return;
   }
-  if(s && !looksLikeIp(s)){
-    showError("Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.");
+  if(s && !isValidIPv4(s)){
+    setStatus("bad", "ورودی اشتباه", "DNS دوم معتبر نیست.", null);
     return;
   }
   if(s && s === p){
-    showError("Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.");
+    setStatus("bad", "ورودی اشتباه", "Primary و Secondary یکی هستند.", null);
     return;
   }
 
-  btn.disabled = true;
-  setAllTesting();
-  showLoader("در حال آماده‌سازی هستیم…");
+  groupsEl.innerHTML = "";
+  setLoading(true, "در حال تست…");
+  setStatus("warn", "در حال تست…", "لطفاً چند لحظه صبر کنید.", null);
 
-  softTimeoutId = setTimeout(()=> loaderExtra.classList.add("show"), 20000);
-  hardTimeoutId = setTimeout(()=> cancelRequest("خطا در سرور"), 120000);
+  btnTest.disabled = true;
+  btnCancel.disabled = false;
 
-  const stop = fakeProgress();
-  currentController = new AbortController();
+  controller = new AbortController();
+  const signal = controller.signal;
+
+  clearTimers();
+  hardTimeoutId = setTimeout(()=>controller.abort(), 15000);
+
+  const params = new URLSearchParams();
+  params.set("primary", p);
+  if(s) params.set("secondary", s);
 
   try{
-    setLoaderText("در حال تست سرورهای Xbox هستیم…");
-    await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرورهای PlayStation هستیم…");
-    await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرور بازی‌های پرطرفدار هستیم…");
-    await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرورهای بین‌المللی هستیم…");
-    await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرورهای داخلی هستیم…");
+    const r = await fetch(`/api/test?${params.toString()}`, { signal });
+    const data = await r.json().catch(()=>null);
 
-    const url = `/api/test?primary=${encodeURIComponent(p)}${s ? `&secondary=${encodeURIComponent(s)}` : ""}`;
-    const r = await fetch(url, { cache:"no-store", signal: currentController.signal });
-    const j = await r.json();
-
-    stop();
-    bar.style.width = "100%";
+    setLoading(false);
     clearTimers();
-    currentController = null;
 
-    if(!j.ok){
-      hideLoader();
-      showError(friendlyError(j.error));
-      btn.disabled = false;
+    if(!r.ok || !data || !data.ok){
+      setStatus("bad", "خطا در تست", "مشکلی پیش آمد. دوباره تلاش کنید.", null);
       return;
     }
 
-    // ✅ اگر DNS عملاً هیچ دامنه‌ای رو resolve نکرد
-    const primaryOk = j.results?.primary?.dnsOk !== false;
-    const secondaryOk = j.results?.secondary ? (j.results.secondary.dnsOk !== false) : true;
+    const primaryRes = data.results?.primary;
+    const secondaryRes = data.results?.secondary;
 
-    if(!primaryOk && !secondaryOk){
-      hideLoader();
-      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
-      btn.disabled = false;
-      return;
+    const primaryData = {
+      raw: primaryRes,
+      groupsMap: buildGroupsMap(primaryRes)
+    };
+    const secondaryData = secondaryRes ? {
+      raw: secondaryRes,
+      groupsMap: buildGroupsMap(secondaryRes)
+    } : null;
+
+    const GROUP_DEFS = [
+      { key:"xbox", title:"سرورهای Xbox", icon:"🎮" },
+      { key:"playstation", title:"سرورهای PlayStation", icon:"🎮" },
+      { key:"games", title:"سرور بازی‌های پرطرفدار", icon:"🔥" },
+      { key:"international", title:"سرورهای بین‌المللی", icon:"🌍" },
+      { key:"internal", title:"سرورهای داخلی", icon:"🏠" },
+    ];
+
+    // overall avg
+    const collectAvg = (res) => {
+      if(!res?.groups) return [];
+      return res.groups.filter(g => g.status !== "fail" && typeof g.avgMs === "number").map(g => g.avgMs);
+    };
+    const avgs = [...collectAvg(primaryRes), ...collectAvg(secondaryRes)];
+    const overallAvg = avgs.length ? Math.round(avgs.reduce((a,b)=>a+b,0)/avgs.length) : null;
+
+    if(!primaryRes?.dnsOk && (!secondaryRes || !secondaryRes?.dnsOk)){
+      setStatus("bad", "DNS مشکل دارد", "در تمام گروه‌ها خطا داشتیم (ممکن است مسیر شبکه/فیلترینگ باشد).", overallAvg);
+    } else {
+      setStatus("good", "تست انجام شد", "نتیجه آماده است.", overallAvg);
     }
 
-    // اگر فقط یکی مشکل داشت، پیام رو نمایش می‌دیم ولی نتیجه‌ها هم میاد
-    if(!primaryOk || (j.results?.secondary && !secondaryOk)){
-      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
+    for (const g of GROUP_DEFS){
+      groupsEl.appendChild(renderGroup(g, primaryData, secondaryData));
     }
-
-    const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
-    const secondaryGroups = Object.fromEntries((j.results?.secondary?.groups || []).map(g=>[g.key, g]));
-
-    for(const key of GROUP_ORDER){
-      const gp = primaryGroups[key] || null;
-      const gs = (j.results?.secondary ? (secondaryGroups[key] || null) : null);
-      renderGroup(key, gp, gs);
-      await new Promise(r=>setTimeout(r, 120));
-    }
-
-    setLoaderText("تست کامل شد ✅");
-    await new Promise(r=>setTimeout(r, 220));
-    hideLoader();
 
   } catch(e){
-    stop();
-    bar.style.width = "100%";
+    setLoading(false);
     clearTimers();
-
-    if(e && e.name === "AbortError"){
-      hideLoader();
-      showError("تست متوقف شد.");
-      btn.disabled = false;
-      return;
+    const aborted = (e && (e.name === "AbortError" || e.message === "AbortError"));
+    if(aborted){
+      setStatus("warn", "تست لغو شد", "درخواست لغو شد.", null);
+    } else {
+      setStatus("bad", "خطا در ارتباط", "اتصال به سرور یا API مشکل دارد.", null);
     }
-
-    hideLoader();
-    showError("خطا در سرور");
+  } finally {
+    btnTest.disabled = false;
+    btnCancel.disabled = true;
+    controller = null;
   }
+}
 
-  setTimeout(()=>btn.disabled=false, 350);
-};
+btnTest.addEventListener("click", runTest);
+btnCancel.addEventListener("click", ()=> { if(controller) controller.abort(); });
+btnClear.addEventListener("click", ()=>{
+  primary.value = "";
+  secondary.value = "";
+  groupsEl.innerHTML = "";
+  setLoading(false);
+  setStatus(null, "آماده تست", "DNS را وارد کنید و شروع تست را بزنید.", null);
+});
 </script>
 </body>
 </html>
