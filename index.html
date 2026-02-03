@@ -30,7 +30,6 @@
   --red2:#fb7185;
   --ok:#22c55e;
   --bad:#ef4444;
-  --panel:#0b1022;
 }
 
 *{ box-sizing:border-box; font-family:"YekanBakh", system-ui, sans-serif; }
@@ -98,7 +97,7 @@ body{
   position:relative; z-index:2;
 }
 
-/* ===== Header: centered ===== */
+/* Header */
 .header{
   display:flex;
   flex-direction:column;
@@ -119,7 +118,7 @@ body{
   line-height:1.4;
 }
 
-/* ===== Form ===== */
+/* Form */
 label{ display:block; color:var(--muted); font-size:13px; margin:10px 0 8px; }
 
 .inputs{
@@ -152,7 +151,7 @@ input:focus{
   line-height: 1.9;
 }
 
-/* ===== Button ===== */
+/* Button */
 button{
   width:100%;
   margin-top:12px;
@@ -186,7 +185,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   transition:width .35s cubic-bezier(.2,.8,.2,1);
 }
 
-/* ===== Error ===== */
+/* Error */
 .errorBox{
   margin-top:10px;
   padding:12px 12px;
@@ -200,7 +199,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 }
 .errorBox.show{ display:block; }
 
-/* ===== Cards ===== */
+/* Cards */
 .grid{
   margin-top:14px;
   display:grid;
@@ -380,7 +379,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 .dTag.ok{ border-color: rgba(34,197,94,.55); color:#d1fae5; }
 .dTag.fail{ border-color: rgba(239,68,68,.55); color:#fee2e2; }
 
-/* ===== Loader ===== */
+/* Loader */
 .loader{
   position:absolute;
   inset:0;
@@ -494,7 +493,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
         <div class="loaderStep" id="loaderText">در حال آماده‌سازی هستیم…</div>
 
         <div class="loaderExtra" id="loaderExtra">
-          <div class="loaderHint" id="loaderHint">لطفاً کمی صبور باشید…</div>
+          <div class="loaderHint">لطفاً کمی صبور باشید…</div>
           <button class="cancelBtn" id="cancelBtn" type="button">انصراف</button>
         </div>
       </div>
@@ -505,7 +504,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       <div class="brandName">تست DNS گیم رنتر</div>
     </div>
 
-    <label>DNS را وارد کنید</label>
+    <label>DNS را وارد کنید (DNS دوم اختیاری است)</label>
     <div class="inputs">
       <div class="inputWrap">
         <input id="primary" inputmode="decimal" autocomplete="off"
@@ -518,7 +517,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     </div>
 
     <div class="helper">
-    
+      اگر فقط یکی وارد شود، همان تست می‌شود. اگر هر دو وارد شوند، هر دو DNS جداگانه بررسی می‌شوند.
     </div>
 
     <button id="btn">شروع تست</button>
@@ -762,7 +761,7 @@ function cancelRequest(reason){
   clearTimers();
   hideLoader();
   bar.style.width = "100%";
-  showError(reason || "عملیات لغو شد.");
+  showError(reason || "تست متوقف شد.");
   btn.disabled = false;
 }
 
@@ -777,9 +776,7 @@ function cancelRequest(reason){
   buildCards(templates);
 })();
 
-cancelBtn.onclick = ()=>{
-  cancelRequest("تست متوقف شد.");
-};
+cancelBtn.onclick = ()=> cancelRequest("تست متوقف شد.");
 
 btn.onclick = async ()=>{
   clearError();
@@ -805,13 +802,8 @@ btn.onclick = async ()=>{
   setAllTesting();
   showLoader("در حال آماده‌سازی هستیم…");
 
-  softTimeoutId = setTimeout(()=>{
-    loaderExtra.classList.add("show");
-  }, 20000);
-
-  hardTimeoutId = setTimeout(()=>{
-    cancelRequest("خطا در سرور");
-  }, 120000);
+  softTimeoutId = setTimeout(()=> loaderExtra.classList.add("show"), 20000);
+  hardTimeoutId = setTimeout(()=> cancelRequest("خطا در سرور"), 120000);
 
   const stop = fakeProgress();
   currentController = new AbortController();
@@ -828,12 +820,7 @@ btn.onclick = async ()=>{
     setLoaderText("در حال تست سرورهای داخلی هستیم…");
 
     const url = `/api/test?primary=${encodeURIComponent(p)}${s ? `&secondary=${encodeURIComponent(s)}` : ""}`;
-
-    const r = await fetch(url, {
-      cache:"no-store",
-      signal: currentController.signal
-    });
-
+    const r = await fetch(url, { cache:"no-store", signal: currentController.signal });
     const j = await r.json();
 
     stop();
@@ -846,6 +833,22 @@ btn.onclick = async ()=>{
       showError(friendlyError(j.error));
       btn.disabled = false;
       return;
+    }
+
+    // ✅ اگر DNS عملاً هیچ دامنه‌ای رو resolve نکرد
+    const primaryOk = j.results?.primary?.dnsOk !== false;
+    const secondaryOk = j.results?.secondary ? (j.results.secondary.dnsOk !== false) : true;
+
+    if(!primaryOk && !secondaryOk){
+      hideLoader();
+      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
+      btn.disabled = false;
+      return;
+    }
+
+    // اگر فقط یکی مشکل داشت، پیام رو نمایش می‌دیم ولی نتیجه‌ها هم میاد
+    if(!primaryOk || (j.results?.secondary && !secondaryOk)){
+      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
     }
 
     const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
@@ -867,7 +870,7 @@ btn.onclick = async ()=>{
     bar.style.width = "100%";
     clearTimers();
 
-    if(e && (e.name === "AbortError")){
+    if(e && e.name === "AbortError"){
       hideLoader();
       showError("تست متوقف شد.");
       btn.disabled = false;
