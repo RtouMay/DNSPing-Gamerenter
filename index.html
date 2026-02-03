@@ -226,7 +226,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 .box.fail{ border-color: rgba(239,68,68,.55); box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
 .box.testing{ border-color: rgba(225,29,72,.35); box-shadow: 0 0 0 3px rgba(225,29,72,.06); }
 
-.boxHead{
+..boxHead{
   display:grid;
   grid-template-columns: 1fr 150px; /* ستون وضعیت همیشه یک اندازه */
   gap:10px;
@@ -263,7 +263,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   width:150px;      /* ثابت */
   min-width:150px;  /* برای اطمینان */
 }
-
 .stateTop{
   display:flex;
   align-items:center;
@@ -295,6 +294,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   gap:6px;
   width:100%;
 }
+
 .pill{
   font-size:11px;
   padding:3px 8px;
@@ -305,6 +305,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   white-space:nowrap;
     text-align:center;
   min-width:0;
+
 }
 
 .actions{ margin-top:10px; }
@@ -698,8 +699,7 @@ function setAllTesting(){
 }
 
 function renderDnsBlock(label, g){
-  // وقتی DNS وارد نشده (secondary خالی بوده)
-  if(g === null){
+  if(!g){
     return `
       <div class="dBlock">
         <div class="dTitle">
@@ -709,43 +709,6 @@ function renderDnsBlock(label, g){
       </div>
     `;
   }
-
-  // وقتی DNS هست ولی هیچ پاسخی نگرفتیم / مشکل داشته
-  if(g === undefined){
-    return `
-      <div class="dBlock">
-        <div class="dTitle">
-          <span>${label}</span>
-          <span class="dMeta">پاسخی دریافت نشد</span>
-        </div>
-      </div>
-    `;
-  }
-
-  // حالت عادی: نتیجه داریم
-  const meta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
-  const items = (g.items || []).map(it=>{
-    const tagCls = it.ok ? "ok" : "fail";
-    const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
-    const shown = shortenDomain(it.domain);
-    return `
-      <div class="dItem">
-        <div class="domain" title="${it.domain}">${shown}</div>
-        <span class="dTag ${tagCls}">${tagTxt}</span>
-      </div>
-    `;
-  }).join("");
-
-  return `
-    <div class="dBlock">
-      <div class="dTitle">
-        <span>${label}</span>
-        <span class="dMeta">${meta}</span>
-      </div>
-      ${items}
-    </div>
-  `;
-}
 
   const meta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
   const items = (g.items || []).map(it=>{
