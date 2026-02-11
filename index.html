@@ -597,15 +597,15 @@ function fakeProgress(){
 function friendlyError(apiError){
   switch(apiError){
     case "invalid_primary":
-      return "Primary DNS معتبر نیست. نمونه: 8.8.8.8";
+      return "Primary DNS درست خالی است. مثل 8.8.8.8";
     case "invalid_secondary":
-      return "Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.";
+      return "Secondary DNS درست خالی است. اگر لازم ندارید خالی بگذارید.";
     case "private_primary":
       return "Primary DNS خصوصی/لوکال است. بهتر است یک DNS عمومی وارد کنید.";
     case "private_secondary":
       return "Secondary DNS خصوصی/لوکال است. اگر وارد می‌کنید، بهتر است عمومی باشد.";
     case "same_dns":
-      return "Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.";
+      return "Primary و Secondary یکی هستند؛ یکی کافی است.";
     case "server_error":
       return "یک مشکل سمت سرور پیش آمد. لطفاً دوباره امتحان کنید.";
     default:
@@ -713,11 +713,11 @@ function buildCards(templateGroups){
       </div>
 
       <div class="actions">
-        <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات بیشتر</button>
+        <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات</button>
       </div>
 
       <div class="details" id="details-${g.key}">
-        هنوز تست انجام نشده است.
+        ${g.key==="route" ? "این بخش چند درخواست ساده را مستقیم با اینترنت خود شما می‌فرستد و زمان پاسخ را نشان می‌دهد. این عددها به نت شما وابسته است و ممکن است بین وای‌فای و اینترنت موبایل فرق کند." : "هنوز تستی انجام نشده."}
       </div>
     </div>
   `).join("");
@@ -729,7 +729,7 @@ function buildCards(templateGroups){
       const open = b.getAttribute("data-open") === "1";
       if(open){
         box.classList.remove("expanded");
-        b.textContent = "جزئیات بیشتر";
+        b.textContent = "جزئیات";
         b.setAttribute("data-open","0");
       } else {
         box.classList.add("expanded");
@@ -754,7 +754,7 @@ function setAllTesting(){
     if(st) st.textContent = "در حال تست…";
     const p = document.getElementById(`p-${k}`); if(p) p.textContent = "Primary: …";
     const s = document.getElementById(`s-${k}`); if(s) s.textContent = "Secondary: …";
-    const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال دریافت نتیجه…";
+    const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال گرفتن نتیجه…";
   }
 }
 
@@ -765,7 +765,7 @@ function renderDnsBlock(label, g, provided){
       <div class="dBlock">
         <div class="dTitle">
           <span>${label}</span>
-          <span class="dMeta">وارد نشده</span>
+          <span class="dMeta">خالی است</span>
         </div>
       </div>
     `;
@@ -777,7 +777,7 @@ function renderDnsBlock(label, g, provided){
       <div class="dBlock">
         <div class="dTitle">
           <span>${label}</span>
-          <span class="dMeta">پاسخی دریافت نشد</span>
+          <span class="dMeta">نتیجه‌ای نگرفتیم</span>
         </div>
       </div>
     `;
@@ -786,7 +786,7 @@ function renderDnsBlock(label, g, provided){
   const meta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
   const items = (g.items || []).map(it=>{
     const tagCls = it.ok ? "ok" : "fail";
-    const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
+    const tagTxt = it.ok ? (it.ms + "ms") : "ناموفق";
     const shown = shortenDomain(it.domain);
     return `
       <div class="dItem">
@@ -888,15 +888,15 @@ btn.onclick = async ()=>{
   const secondaryProvided = !!s;
 
   if(!p || !looksLikeIp(p)){
-    showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8");
+    showError("Primary DNS درست خالی است. مثل 8.8.8.8");
     return;
   }
   if(s && !looksLikeIp(s)){
-    showError("Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.");
+    showError("Secondary DNS درست خالی است. اگر لازم ندارید خالی بگذارید.");
     return;
   }
   if(s && s === p){
-    showError("Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.");
+    showError("Primary و Secondary یکی هستند؛ یکی کافی است.");
     return;
   }
 
@@ -905,7 +905,7 @@ btn.onclick = async ()=>{
   showLoader("در حال آماده‌سازی هستیم…");
 
   softTimeoutId = setTimeout(()=> loaderExtra.classList.add("show"), 20000);
-  hardTimeoutId = setTimeout(()=> cancelRequest("خطا در سرور"), 120000);
+  hardTimeoutId = setTimeout(()=> cancelRequest("یه مشکل سمت سرور پیش آمد."), 120000);
 
   const stop = fakeProgress();
   currentController = new AbortController();
@@ -940,7 +940,7 @@ btn.onclick = async ()=>{
     if(!j.ok){
       // تست DNS از سمت سرور ناموفق بود، ولی Route tests (اگر موجود باشد) هنوز می‌تواند برای کاربر مفید باشد
       hideLoader();
-      showError("تست DNS از سمت سرور انجام نشد (نتیجه‌ی دقیق DNS خام در وب‌اپ ممکن نیست). لطفاً Route / Latency را برای اینترنت خودتان بررسی کنید.");
+      showError("تست DNS روی سرور انجام نشد. توی وب‌اپ امکان تست دقیق DNS خام از داخل اینترنت شما وجود ندارد. برای اینکه وضعیت اینترنت خودتان را ببینید، بخش Route / Latency را نگاه کنید.");
       const primaryGroups = {};
       const secondaryGroups = {};
       if(routeGroup){ primaryGroups["route"] = routeGroup; }
@@ -961,14 +961,14 @@ btn.onclick = async ()=>{
 
     if(!primaryOk && !secondaryOk){
       hideLoader();
-      showError("این دی‌ان‌اس از دید سرور در دسترس نیست یا مشکل دارد. (ممکن است از شبکه‌ی شما کار کند.) برای بررسی کیفیت اینترنت خودتان بخش Route / Latency را ببینید.");
+      showError("این DNS از دید سرور در دسترس نیست یا درست جواب نداد. ممکن است روی اینترنت شما کار کند. برای بررسی اینترنت خودتان، بخش Route / Latency را ببینید.");
       btn.disabled = false;
       return;
     }
 
     // اگر فقط یکی مشکل داشت، پیام رو نمایش می‌دیم ولی نتیجه‌ها هم میاد
     if(!primaryOk || (j.results?.secondary && !secondaryOk)){
-      showError("این دی‌ان‌اس از دید سرور در دسترس نیست یا مشکل دارد. (ممکن است از شبکه‌ی شما کار کند.) برای بررسی کیفیت اینترنت خودتان بخش Route / Latency را ببینید.");
+      showError("این DNS از دید سرور در دسترس نیست یا درست جواب نداد. ممکن است روی اینترنت شما کار کند. برای بررسی اینترنت خودتان، بخش Route / Latency را ببینید.");
     }
 
     const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
@@ -1001,7 +1001,7 @@ btn.onclick = async ()=>{
     }
 
     hideLoader();
-    showError("خطا در سرور");
+    showError("یه مشکل سمت سرور پیش آمد.");
   }
 
   setTimeout(()=>btn.disabled=false, 350);
