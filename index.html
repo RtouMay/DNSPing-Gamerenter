@@ -758,13 +758,26 @@ function setAllTesting(){
   }
 }
 
-function renderDnsBlock(label, g){
-  if(!g){
+function renderDnsBlock(label, g, provided){
+  // provided: آیا کاربر این DNS را وارد کرده؟
+  if(!provided){
     return `
       <div class="dBlock">
         <div class="dTitle">
           <span>${label}</span>
           <span class="dMeta">وارد نشده</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // DNS وارد شده اما نتیجه‌ای نداریم (مثلاً خطا/timeout/قطع درخواست)
+  if(!g){
+    return `
+      <div class="dBlock">
+        <div class="dTitle">
+          <span>${label}</span>
+          <span class="dMeta">پاسخی دریافت نشد</span>
         </div>
       </div>
     `;
@@ -794,7 +807,7 @@ function renderDnsBlock(label, g){
   `;
 }
 
-function renderGroup(key, gp, gs){
+function renderGroup(key, gp, gs, primaryProvided, secondaryProvided){
   const box = document.getElementById(`box-${key}`);
   const stateEl = document.getElementById(`state-${key}`);
   const pEl = document.getElementById(`p-${key}`);
@@ -808,12 +821,26 @@ function renderGroup(key, gp, gs){
 
   stateEl.textContent = overallOk ? "قابل استفاده ✅" : "مشکل دارد ❌";
 
-  pEl.textContent = gp ? `Primary: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "Primary: -";
-  sEl.textContent = gs ? `Secondary: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : "Secondary: -";
+  // برچسب‌های خلاصه بالا (Primary/Secondary)
+  if(!primaryProvided){
+    pEl.textContent = "Primary: -";
+  } else if(!gp){
+    pEl.textContent = "Primary: پاسخ نداد";
+  } else {
+    pEl.textContent = `Primary: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}`;
+  }
+
+  if(!secondaryProvided){
+    sEl.textContent = "Secondary: -";
+  } else if(!gs){
+    sEl.textContent = "Secondary: پاسخ نداد";
+  } else {
+    sEl.textContent = `Secondary: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}`;
+  }
 
   details.innerHTML = `
-    ${renderDnsBlock("Primary DNS", gp)}
-    ${renderDnsBlock("Secondary DNS", gs)}
+    ${renderDnsBlock("Primary DNS", gp, primaryProvided)}
+    ${renderDnsBlock("Secondary DNS", gs, secondaryProvided)}
   `;
 }
 
@@ -856,6 +883,9 @@ btn.onclick = async ()=>{
 
   const p = normalizeDigits(primary.value.trim());
   const s = normalizeDigits(secondary.value.trim());
+
+  const primaryProvided = !!p;
+  const secondaryProvided = !!s;
 
   if(!p || !looksLikeIp(p)){
     showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8");
@@ -919,7 +949,7 @@ btn.onclick = async ()=>{
         const gs = null;
         // فقط route را داریم
         if(key !== "route") continue;
-        renderGroup(key, gp, gs);
+        renderGroup(key, gp, gs, primaryProvided, secondaryProvided);
       }
       btn.disabled = false;
       return;
@@ -950,7 +980,7 @@ btn.onclick = async ()=>{
     for(const key of GROUP_ORDER){
       const gp = primaryGroups[key] || null;
       const gs = (j.results?.secondary ? (secondaryGroups[key] || null) : null);
-      renderGroup(key, gp, gs);
+      renderGroup(key, gp, gs, primaryProvided, secondaryProvided);
       await new Promise(r=>setTimeout(r, 120));
     }
 
