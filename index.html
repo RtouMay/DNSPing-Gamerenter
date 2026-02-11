@@ -548,7 +548,7 @@ const loaderExtra = document.getElementById('loaderExtra');
 const cancelBtn = document.getElementById('cancelBtn');
 
 const grid = document.getElementById('grid');
-const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
+const GROUP_ORDER = ["xbox","playstation","games","international","internal","route"];
 
 let currentController = null;
 let hardTimeoutId = null;
@@ -620,6 +620,77 @@ function shortenDomain(d){
   const end = d.slice(-10);
   return `${start}…${end}`;
 }
+
+// ---- Route tests (از اینترنت خود کاربر) ----
+// این تست‌ها جایگزین تست DNS خام نیستند؛ اما برای گیمرها معمولاً تصویر دقیق‌تری از کیفیت مسیر می‌دهند.
+// چون از داخل مرورگر اجرا می‌شوند، درخواست‌ها از IP خودِ کاربر ارسال می‌شود.
+const ROUTE_GROUP = {
+  key: "route",
+  label: "Route / Latency (از اینترنت شما)",
+  items: [
+    { domain: "xbox.com" },
+    { domain: "playstation.com" },
+    { domain: "store.steampowered.com" },
+    { domain: "epicgames.com" },
+    { domain: "battle.net" },
+    { domain: "cloudflare.com" },
+    { domain: "google.com" },
+    { domain: "github.com" }
+  ]
+};
+
+function makeTimeoutSignal(ms, parentSignal){
+  const c = new AbortController();
+  const t = setTimeout(()=>c.abort(), ms);
+  const cleanup = ()=>clearTimeout(t);
+  if(parentSignal){
+    if(parentSignal.aborted) c.abort();
+    else parentSignal.addEventListener("abort", ()=>c.abort(), { once:true });
+  }
+  return { signal: c.signal, cleanup };
+}
+
+// HEAD با no-cors: اجازه‌ی خواندن status نداریم، ولی برای سنجش latency شبکه کافی است (opaque موفق = مسیر برقرار)
+async function probeHttp(domain, parentSignal){
+  const url = `https://${domain}/?__t=${Date.now()}${Math.random().toString(16).slice(2)}`;
+  const t0 = performance.now();
+  const { signal, cleanup } = makeTimeoutSignal(3500, parentSignal);
+  try{
+    // mode:no-cors تا CORS جلوی ما را نگیرد
+    await fetch(url, { method: "HEAD", mode: "no-cors", cache: "no-store", signal });
+    const ms = Math.round(performance.now() - t0);
+    return { domain, ok: true, ms };
+  }catch(e){
+    const ms = Math.round(performance.now() - t0);
+    return { domain, ok: false, ms };
+  }finally{
+    cleanup();
+  }
+}
+
+async function runRouteTests(parentSignal){
+  // concurrency محدود برای سرعت بهتر
+  const concurrency = 4;
+  const queue = ROUTE_GROUP.items.map(x=>x.domain);
+  const out = [];
+  const workers = Array.from({length: concurrency}, async ()=>{
+    while(queue.length){
+      const d = queue.shift();
+      const r = await probeHttp(d, parentSignal);
+      out.push(r);
+    }
+  });
+  await Promise.all(workers);
+  // مرتب‌سازی مطابق لیست اولیه
+  const idx = new Map(ROUTE_GROUP.items.map((x,i)=>[x.domain,i]));
+  out.sort((a,b)=>(idx.get(a.domain)-idx.get(b.domain)));
+  const okCount = out.filter(x=>x.ok).length;
+  const total = out.length;
+  const avgMs = okCount ? Math.round(out.filter(x=>x.ok).reduce((s,x)=>s+x.ms,0)/okCount) : null;
+  const status = okCount ? "ok" : "fail";
+  return { key: ROUTE_GROUP.key, label: ROUTE_GROUP.label, status, avgMs, okCount, total, items: out };
+}
+
 
 function buildCards(templateGroups){
   grid.innerHTML = templateGroups.map(g => `
@@ -772,236 +843,12 @@ function cancelRequest(reason){
     { key:"games", title:"سرور بازی‌های پرطرفدار", icon:"🔥" },
     { key:"international", title:"سرورهای بین‌المللی", icon:"🌍" },
     { key:"internal", title:"سرورهای داخلی", icon:"🇮🇷" },
+    { key:"route", title:"Route / Latency (از اینترنت شما)", icon:"⚡" },
   ];
   buildCards(templates);
 })();
 
 cancelBtn.onclick = ()=> cancelRequest("تست متوقف شد.");
-
-
-// ====== Browser-side (User IP) test helpers: DoH + smarter metrics ======
-const DOH_MAP = {
-  // Cloudflare
-  "1.1.1.1": "https://cloudflare-dns.com/dns-query",
-  "1.0.0.1": "https://cloudflare-dns.com/dns-query",
-  // Google
-  "8.8.8.8": "https://dns.google/dns-query",
-  "8.8.4.4": "https://dns.google/dns-query",
-  // Quad9
-  "9.9.9.9": "https://dns.quad9.net/dns-query",
-  "149.112.112.112": "https://dns.quad9.net/dns-query",
-  // AdGuard
-  "94.140.14.14": "https://dns.adguard.com/dns-query",
-  "94.140.15.15": "https://dns.adguard.com/dns-query",
-  // OpenDNS
-  "208.67.222.222": "https://doh.opendns.com/dns-query",
-  "208.67.220.220": "https://doh.opendns.com/dns-query"
-};
-
-// Conservative defaults: more accurate than single-shot, still fast enough for WebApp
-const ATTEMPTS_PER_DOMAIN = 2;          // retries (median-based)
-const PER_REQ_TIMEOUT_MS = 3500;        // per DoH request timeout
-const CONCURRENCY = 4;                  // parallelism per group
-
-function isHttpUrl(v){
-  try{
-    const u = new URL(v);
-    return u.protocol === "https:" || u.protocol === "http:";
-  }catch(e){
-    return false;
-  }
-}
-
-function median(nums){
-  const a = (nums || []).slice().sort((x,y)=>x-y);
-  if(!a.length) return null;
-  const mid = Math.floor(a.length/2);
-  return a.length % 2 ? a[mid] : Math.round((a[mid-1]+a[mid])/2);
-}
-
-function avgMs(items){
-  const ok = (items || []).filter(x=>x && x.ok && typeof x.ms === "number").map(x=>x.ms);
-  if(!ok.length) return null;
-  return Math.round(ok.reduce((s,v)=>s+v,0)/ok.length);
-}
-
-function groupStatus(items){
-  const okCount = (items || []).filter(x=>x && x.ok).length;
-  if(okCount === 0) return "fail";
-  if(okCount === items.length) return "ok";
-  return "warn";
-}
-
-function allFailed(groups){
-  return (groups || []).every(g => g && g.okCount === 0);
-}
-
-function withTimeout(promise, ms, signal){
-  const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(new Error("timeout")), ms);
-  const onAbort = ()=>ctrl.abort(new Error("aborted"));
-  if(signal) signal.addEventListener("abort", onAbort, { once:true });
-
-  return Promise.race([
-    promise(ctrl.signal),
-    new Promise((_,rej)=>ctrl.signal.addEventListener("abort", ()=>rej(ctrl.signal.reason || new Error("aborted")), { once:true }))
-  ]).finally(()=>{
-    clearTimeout(t);
-    if(signal) signal.removeEventListener("abort", onAbort);
-  });
-}
-
-async function dohResolveA(dohUrl, domain, signal){
-  // cache-bust to avoid intermediary caches; DNS caches may still exist (normal)
-  const cb = Math.random().toString(16).slice(2);
-  const u = new URL(dohUrl);
-  u.searchParams.set("name", domain);
-  u.searchParams.set("type", "A");
-  u.searchParams.set("cb", cb);
-
-  const t0 = performance.now();
-  const res = await fetch(u.toString(), {
-    method: "GET",
-    cache: "no-store",
-    headers: { "accept": "application/dns-json" },
-    signal
-  });
-  let data = null;
-  try{ data = await res.json(); }catch(e){}
-
-  const ms = Math.round(performance.now() - t0);
-
-  const answers = data && Array.isArray(data.Answer) ? data.Answer : [];
-  const ok = !!answers.find(a => a && a.type === 1 && typeof a.data === "string");
-
-  return { ok, ms };
-}
-
-async function testOneDomainDoH(dohUrl, domain, outerSignal){
-  const timesOk = [];
-  const timesAll = [];
-
-  for(let i=0;i<ATTEMPTS_PER_DOMAIN;i++){
-    if(outerSignal?.aborted) return { domain, ok:false, ms:null };
-
-    const r = await withTimeout(
-      (sig)=>dohResolveA(dohUrl, domain, sig),
-      PER_REQ_TIMEOUT_MS,
-      outerSignal
-    ).catch(()=>({ ok:false, ms: Math.round(PER_REQ_TIMEOUT_MS) }));
-
-    timesAll.push(r.ms);
-    if(r.ok) timesOk.push(r.ms);
-
-    // small jitter to reduce burst patterns on mobile networks
-    await new Promise(res=>setTimeout(res, 60 + Math.random()*90));
-  }
-
-  if(timesOk.length){
-    return { domain, ok:true, ms: median(timesOk) };
-  }
-  return { domain, ok:false, ms: median(timesAll) };
-}
-
-async function poolMap(items, worker, concurrency, signal){
-  const out = new Array(items.length);
-  let i = 0;
-
-  async function run(){
-    while(true){
-      const idx = i++;
-      if(idx >= items.length) return;
-      if(signal?.aborted) return;
-      out[idx] = await worker(items[idx], idx);
-    }
-  }
-
-  const runners = [];
-  for(let k=0;k<Math.min(concurrency, items.length); k++) runners.push(run());
-  await Promise.all(runners);
-  return out;
-}
-
-async function runForDnsInBrowser(inputValue, outerSignal){
-  // inputValue can be a known DNS IP (mapped to DoH) OR a direct DoH URL
-  const val = (inputValue || "").trim();
-  const dohUrl = isHttpUrl(val) ? val : (DOH_MAP[val] || null);
-
-  if(!dohUrl){
-    return { mode:"unsupported", error:"no_doh" };
-  }
-
-  // Mirrors server response structure: { groups:[...], dnsOk:boolean }
-  const GROUPS = [
-    { key:"xbox", title:"Xbox", domains:["xbox.com","account.xbox.com","login.live.com","xsts.auth.xboxlive.com"] },
-    { key:"playstation", title:"PlayStation", domains:["playstation.com","id.sonyentertainmentnetwork.com","auth.api.sonyentertainmentnetwork.com"] },
-    { key:"games", title:"Games", domains:["store.steampowered.com","epicgames.com","ea.com","battle.net"] },
-    { key:"international", title:"International", domains:["google.com","cloudflare.com","github.com","openai.com"] },
-    { key:"internal", title:"Internal", domains:["aparat.com","digikala.com","snapp.ir","divar.ir"] }
-  ];
-
-  const groups = [];
-  for(const g of GROUPS){
-    const items = await poolMap(
-      g.domains,
-      (d)=>testOneDomainDoH(dohUrl, d, outerSignal),
-      CONCURRENCY,
-      outerSignal
-    );
-
-    const okCount = items.filter(x=>x.ok).length;
-    const total = items.length;
-
-    groups.push({
-      key: g.key,
-      title: g.title,
-      total,
-      okCount,
-      // avgMs is what UI shows; we keep it numeric
-      avgMs: avgMs(items),
-      status: groupStatus(items),
-      items
-    });
-  }
-
-  return { mode:"doh", groups, dnsOk: !allFailed(groups) };
-}
-
-async function runHybridTest(primaryVal, secondaryVal, signal){
-  // 1) Try real user-IP DoH (best effort)
-  const primaryR = await runForDnsInBrowser(primaryVal, signal);
-
-  // If unsupported, fallback to server (less accurate) so user still gets something
-  let out = { ok:true, results:{ primary:null } };
-
-  if(primaryR.mode === "doh"){
-    out.results.primary = { groups: primaryR.groups, dnsOk: primaryR.dnsOk };
-  }else{
-    // Server fallback (Vercel) – keep UI, but warn
-    showError("⚠️ این DNS به‌صورت مستقیم داخل وب‌اپ قابل تست نیست (DNS کلاسیک). نتیجه با سرور محاسبه می‌شود و ممکن است با اینترنت شما متفاوت باشد. برای تست واقعی، یک DNS دارای DoH یا لینک DoH وارد کنید.");
-    const url = `/api/test?primary=${encodeURIComponent(primaryVal)}${secondaryVal ? `&secondary=${encodeURIComponent(secondaryVal)}` : ""}`;
-    const r = await fetch(url, { cache:"no-store", signal });
-    const j = await r.json();
-    return j;
-  }
-
-  if(secondaryVal){
-    const secondaryR = await runForDnsInBrowser(secondaryVal, signal);
-    if(secondaryR.mode === "doh"){
-      out.results.secondary = { groups: secondaryR.groups, dnsOk: secondaryR.dnsOk };
-    }else{
-      // Secondary unsupported → keep but warn; fall back to server for secondary too (still better than nothing)
-      showError("⚠️ Secondary DNS به‌صورت مستقیم داخل وب‌اپ قابل تست نیست. نتیجه Secondary از سرور محاسبه می‌شود و ممکن است با اینترنت شما متفاوت باشد.");
-      const url = `/api/test?primary=${encodeURIComponent(primaryVal)}&secondary=${encodeURIComponent(secondaryVal)}`;
-      const r = await fetch(url, { cache:"no-store", signal });
-      const j = await r.json();
-      return j;
-    }
-  }
-
-  return out;
-}
-// ====== End helpers ======
 
 btn.onclick = async ()=>{
   clearError();
@@ -1010,12 +857,12 @@ btn.onclick = async ()=>{
   const p = normalizeDigits(primary.value.trim());
   const s = normalizeDigits(secondary.value.trim());
 
-  if(!p || (!looksLikeIp(p) && !isHttpUrl(p))){
-    showError("Primary معتبر نیست. نمونه: 8.8.8.8  (یا لینک DoH مثل https://dns.google/dns-query)");
+  if(!p || !looksLikeIp(p)){
+    showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8");
     return;
   }
-  if(s && (!looksLikeIp(s) && !isHttpUrl(s))){
-    showError("Secondary معتبر نیست. اگر نیاز ندارید، خالی بگذارید. (یا لینک DoH)");
+  if(s && !looksLikeIp(s)){
+    showError("Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.");
     return;
   }
   if(s && s === p){
@@ -1044,7 +891,16 @@ btn.onclick = async ()=>{
     await new Promise(r=>setTimeout(r, 220));
     setLoaderText("در حال تست سرورهای داخلی هستیم…");
 
-    const j = await runHybridTest(p, s, currentController.signal);
+    const url = `/api/test?primary=${encodeURIComponent(p)}${s ? `&secondary=${encodeURIComponent(s)}` : ""}`;
+
+    // همزمان: (۱) تست DNS از سمت سرور (Vercel) + (۲) تست مسیر از سمت کاربر (Route tests)
+    // Route tests از IP کاربر انجام می‌شوند و برای گیمرها معمولاً کاربردی‌ترند.
+    const [apiResp, routeGroup] = await Promise.all([
+      fetch(url, { cache:"no-store", signal: currentController.signal }).then(r=>r.json()).catch(()=>({ ok:false, error:"server_error" })),
+      runRouteTests(currentController.signal).catch(()=>null)
+    ]);
+
+    const j = apiResp;
 
     stop();
     bar.style.width = "100%";
@@ -1052,8 +908,19 @@ btn.onclick = async ()=>{
     currentController = null;
 
     if(!j.ok){
+      // تست DNS از سمت سرور ناموفق بود، ولی Route tests (اگر موجود باشد) هنوز می‌تواند برای کاربر مفید باشد
       hideLoader();
-      showError(friendlyError(j.error));
+      showError("تست DNS از سمت سرور انجام نشد (نتیجه‌ی دقیق DNS خام در وب‌اپ ممکن نیست). لطفاً Route / Latency را برای اینترنت خودتان بررسی کنید.");
+      const primaryGroups = {};
+      const secondaryGroups = {};
+      if(routeGroup){ primaryGroups["route"] = routeGroup; }
+      for(const key of GROUP_ORDER){
+        const gp = primaryGroups[key] || null;
+        const gs = null;
+        // فقط route را داریم
+        if(key !== "route") continue;
+        renderGroup(key, gp, gs);
+      }
       btn.disabled = false;
       return;
     }
@@ -1064,18 +931,21 @@ btn.onclick = async ()=>{
 
     if(!primaryOk && !secondaryOk){
       hideLoader();
-      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
+      showError("این دی‌ان‌اس از دید سرور در دسترس نیست یا مشکل دارد. (ممکن است از شبکه‌ی شما کار کند.) برای بررسی کیفیت اینترنت خودتان بخش Route / Latency را ببینید.");
       btn.disabled = false;
       return;
     }
 
     // اگر فقط یکی مشکل داشت، پیام رو نمایش می‌دیم ولی نتیجه‌ها هم میاد
     if(!primaryOk || (j.results?.secondary && !secondaryOk)){
-      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
+      showError("این دی‌ان‌اس از دید سرور در دسترس نیست یا مشکل دارد. (ممکن است از شبکه‌ی شما کار کند.) برای بررسی کیفیت اینترنت خودتان بخش Route / Latency را ببینید.");
     }
 
     const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
     const secondaryGroups = Object.fromEntries((j.results?.secondary?.groups || []).map(g=>[g.key, g]));
+
+    // اضافه کردن نتیجه‌ی Route tests (از IP کاربر)
+    if(routeGroup){ primaryGroups["route"] = routeGroup; }
 
     for(const key of GROUP_ORDER){
       const gp = primaryGroups[key] || null;
