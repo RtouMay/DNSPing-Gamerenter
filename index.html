@@ -1,673 +1,1058 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>تست DNS (از دید کاربر) - DoH</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>تست DNS گیم رنتر</title>
 
-  <style>
-    :root{
-      --bg:#0b1020;
-      --card:#121a33;
-      --muted:#93a4c7;
-      --text:#e9f0ff;
-      --accent:#4c7dff;
-      --ok:#22c55e;
-      --bad:#ef4444;
-      --warn:#f59e0b;
-      --border:rgba(255,255,255,.08);
-      --shadow:0 10px 30px rgba(0,0,0,.35);
-      --radius:18px;
-    }
-    *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;}
-    body{
-      margin:0; min-height:100vh;
-      background: radial-gradient(1200px 700px at 20% -10%, rgba(76,125,255,.25), transparent 60%),
-                  radial-gradient(900px 600px at 90% 10%, rgba(245,158,11,.18), transparent 55%),
-                  var(--bg);
-      color:var(--text);
-    }
-    .wrap{max-width:1100px;margin:0 auto;padding:22px 16px 60px;}
-    header{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      margin:10px 0 18px;
-    }
-    h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.2px}
-    .tag{
-      font-size:12px;color:var(--muted);
-      border:1px solid var(--border);
-      padding:7px 10px;border-radius:999px;
-      backdrop-filter: blur(8px);
-      background:rgba(18,26,51,.4);
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: 1.2fr .8fr;
-      gap:14px;
-    }
-    @media (max-width: 920px){
-      .grid{grid-template-columns:1fr;}
-    }
-    .card{
-      background:rgba(18,26,51,.78);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-    .card-h{
-      padding:14px 16px;
-      border-bottom:1px solid var(--border);
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-    }
-    .card-h b{font-size:14px}
-    .card-b{padding:14px 16px;}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-    input,select{
-      width:100%;
-      padding:12px 12px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(11,16,32,.65);
-      color:var(--text);
-      outline:none;
-    }
-    input:focus,select:focus{border-color:rgba(76,125,255,.7); box-shadow:0 0 0 4px rgba(76,125,255,.15)}
-    .col{flex:1;min-width:240px}
-    .help{color:var(--muted);font-size:12px;line-height:1.7;margin-top:8px}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-    button{
-      border:none;
-      padding:12px 14px;
-      border-radius:12px;
-      cursor:pointer;
-      font-weight:700;
-      transition:.15s transform ease, .15s opacity ease;
-    }
-    button:active{transform:translateY(1px)}
-    .btn-primary{background:linear-gradient(135deg, rgba(76,125,255,1), rgba(76,125,255,.72)); color:#081022}
-    .btn-ghost{background:rgba(255,255,255,.06); color:var(--text); border:1px solid var(--border)}
-    .btn-danger{background:rgba(239,68,68,.16); color:#ffd6d6; border:1px solid rgba(239,68,68,.25)}
-    .disabled{opacity:.55; pointer-events:none}
-    .status{
-      display:flex;align-items:center;gap:10px;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:rgba(11,16,32,.55);
-    }
-    .dot{width:10px;height:10px;border-radius:50%}
-    .dot.ok{background:var(--ok)}
-    .dot.bad{background:var(--bad)}
-    .dot.warn{background:var(--warn)}
-    .dot.idle{background:rgba(255,255,255,.25)}
-    .muted{color:var(--muted);font-size:12px}
-    .progress{
-      margin-top:12px;height:10px;border-radius:999px;
-      background:rgba(255,255,255,.06);
-      border:1px solid var(--border);
-      overflow:hidden;
-    }
-    .bar{height:100%;width:0%;background:linear-gradient(90deg, rgba(76,125,255,.9), rgba(34,197,94,.85)); transition:width .15s ease}
-    .results{display:grid;gap:12px;margin-top:14px}
-    .group{
-      border:1px solid var(--border);
-      border-radius:16px;
-      overflow:hidden;
-      background:rgba(11,16,32,.45);
-    }
-    .group-h{
-      display:flex;align-items:center;justify-content:space-between;gap:12px;
-      padding:12px 14px;border-bottom:1px solid var(--border)
-    }
-    .group-h .title{display:flex;align-items:center;gap:10px}
-    .pill{
-      font-size:11px;color:var(--muted);
-      border:1px solid var(--border);
-      padding:5px 8px;border-radius:999px;
-    }
-    .list{padding:10px 14px; display:grid; gap:8px}
-    .item{
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      padding:10px 10px;border-radius:12px;
-      border:1px solid rgba(255,255,255,.07);
-      background:rgba(18,26,51,.55);
-    }
-    .item .left{display:flex;align-items:center;gap:10px;min-width:0}
-    .item .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:66vw}
-    .badge{
-      font-size:11px;font-weight:800;
-      padding:6px 9px;border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
-    }
-    .badge.ok{background:rgba(34,197,94,.14); color:#b9f6cd; border-color:rgba(34,197,94,.25)}
-    .badge.bad{background:rgba(239,68,68,.14); color:#ffd1d1; border-color:rgba(239,68,68,.25)}
-    .time{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
-    .footer-note{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.7}
-    .small{font-size:11px;color:var(--muted)}
-    .hide{display:none !important}
-    a{color:#bcd0ff}
-  </style>
+<style>
+@font-face{
+  font-family: "YekanBakh";
+  src: url("YekanBakh-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face{
+  font-family: "YekanBakh";
+  src: url("YekanBakh-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root{
+  --bg:#070a12;
+  --border:#1b2444;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --red:#e11d48;
+  --red2:#fb7185;
+  --ok:#22c55e;
+  --bad:#ef4444;
+}
+
+*{ box-sizing:border-box; font-family:"YekanBakh", system-ui, sans-serif; }
+
+body{
+  margin:0;
+  color:var(--text);
+  background:
+    radial-gradient(900px 500px at 10% 0%, rgba(225,29,72,.18), transparent 45%),
+    radial-gradient(900px 500px at 90% 10%, rgba(251,113,133,.10), transparent 50%),
+    radial-gradient(1200px 700px at 50% 110%, rgba(34,197,94,.06), transparent 50%),
+    var(--bg);
+}
+
+.container{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:16px;
+}
+
+.card{
+  width:100%;
+  max-width:560px;
+  border-radius:22px;
+  background:linear-gradient(180deg, rgba(18,24,43,.92), rgba(14,20,39,.92));
+  border:1px solid rgba(27,36,68,.92);
+  box-shadow:
+    0 24px 80px rgba(0,0,0,.65),
+    0 0 0 1px rgba(225,29,72,.10) inset,
+    0 0 50px rgba(225,29,72,.06);
+  padding:18px;
+  position:relative;
+  overflow:hidden;
+}
+
+.card:before{
+  content:"";
+  position:absolute; inset:-2px;
+  background:radial-gradient(600px 220px at 50% 0%, rgba(225,29,72,.20), transparent 60%);
+  pointer-events:none;
+}
+.card:after{
+  content:"";
+  position:absolute; inset:-45%;
+  background:
+    radial-gradient(600px 260px at 20% 15%, rgba(225,29,72,.18), transparent 60%),
+    radial-gradient(500px 240px at 85% 25%, rgba(251,113,133,.16), transparent 65%),
+    radial-gradient(700px 320px at 55% 90%, rgba(225,29,72,.08), transparent 60%),
+    linear-gradient(120deg, rgba(225,29,72,.10), transparent 40%, rgba(251,113,133,.08));
+  filter: blur(18px);
+  opacity:.75;
+  mix-blend-mode: screen;
+  animation: videoGlow 6s ease-in-out infinite;
+  pointer-events:none;
+  z-index:0;
+}
+@keyframes videoGlow{
+  0%{transform:translate3d(-2%,-2%,0) scale(1)}
+  50%{transform:translate3d(2%,1%,0) scale(1.04)}
+  100%{transform:translate3d(-2%,-2%,0) scale(1)}
+}
+
+.header, label, .inputs, .helper, button, .progress, .grid, .footer, .errorBox, .loader{
+  position:relative; z-index:2;
+}
+
+/* Header */
+.header{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  padding-top:6px;
+  padding-bottom:8px;
+}
+.header img{
+  width:110px;
+  height:auto;
+  display:block;
+  filter:drop-shadow(0 14px 30px rgba(225,29,72,.34));
+}
+.header .brandName{
+  font-weight:700;
+  font-size:15px;
+  line-height:1.4;
+}
+
+/* Form */
+label{ display:block; color:var(--muted); font-size:13px; margin:10px 0 8px; }
+
+.inputs{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+}
+
+.inputWrap{ position:relative; }
+input{
+  width:100%;
+  padding:14px 14px;
+  border-radius:16px;
+  border:1px solid rgba(27,36,68,.95);
+  background:rgba(11,16,34,.92);
+  color:var(--text);
+  font-size:15px;
+  outline:none;
+  transition:.2s;
+}
+input:focus{
+  border-color:rgba(225,29,72,.92);
+  box-shadow:0 0 0 4px rgba(225,29,72,.18);
+}
+
+.helper{
+  margin-top:8px;
+  color: var(--muted);
+  font-size:12px;
+  line-height: 1.9;
+}
+
+/* Button */
+button{
+  width:100%;
+  margin-top:12px;
+  padding:14px 14px;
+  border-radius:18px;
+  border:none;
+  color:white;
+  font-size:15px;
+  cursor:pointer;
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  box-shadow:0 12px 30px rgba(225,29,72,.22);
+  transition:.2s;
+  font-weight:700;
+}
+button:hover{ transform:translateY(-1px) }
+button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
+
+.progress{
+  margin-top:12px;
+  height:10px;
+  border-radius:999px;
+  background:rgba(11,16,34,.92);
+  border:1px solid rgba(27,36,68,.95);
+  overflow:hidden;
+}
+.progress i{
+  display:block;
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg, var(--red), var(--red2));
+  transition:width .35s cubic-bezier(.2,.8,.2,1);
+}
+
+/* Error */
+.errorBox{
+  margin-top:10px;
+  padding:12px 12px;
+  border-radius:16px;
+  border:1px dashed rgba(239,68,68,.62);
+  background: rgba(11,16,34,.90);
+  color:#fee2e2;
+  font-size:13px;
+  display:none;
+  line-height:1.9;
+}
+.errorBox.show{ display:block; }
+
+/* Cards */
+.grid{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:10px;
+}
+
+.box{
+  background: rgba(11,16,34,.92);
+  border:1px solid rgba(27,36,68,.95);
+  border-radius:18px;
+  padding:12px;
+  transition:.2s;
+  overflow:hidden;
+}
+.box.ok{ border-color: rgba(34,197,94,.55); box-shadow: 0 0 0 3px rgba(34,197,94,.08); }
+.box.fail{ border-color: rgba(239,68,68,.55); box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
+.box.testing{ border-color: rgba(225,29,72,.35); box-shadow: 0 0 0 3px rgba(225,29,72,.06); }
+
+.boxHead{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap:10px;
+  align-items:center;
+}
+
+.boxTitle{
+  display:grid;
+  grid-template-columns: 34px 1fr;
+  gap:10px;
+  align-items:center;
+  min-height:34px;
+}
+.icon{
+  width:34px; height:34px;
+  display:grid; place-items:center;
+  border-radius:12px;
+  border:1px solid rgba(27,36,68,.85);
+  background: rgba(7,10,18,.35);
+}
+.boxTitleText{
+  font-weight:700;
+  font-size:14px;
+  line-height:1.3;
+}
+
+.state{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:6px;
+  font-size:12px;
+  color: var(--muted);
+  min-width: 126px;
+}
+
+.stateTop{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.light{
+  width:10px; height:10px; border-radius:50%;
+  background: rgba(156,163,175,.45);
+  transition:.2s;
+}
+
+.box.testing .light{
+  background: linear-gradient(180deg, var(--red), var(--red2));
+  box-shadow: 0 0 16px rgba(225,29,72,.45);
+  animation: blink 1s ease-in-out infinite;
+}
+.box.ok .light{ background: var(--ok); box-shadow: 0 0 16px rgba(34,197,94,.45); }
+.box.fail .light{ background: var(--bad); box-shadow: 0 0 16px rgba(239,68,68,.45); }
+
+@keyframes blink{
+  0%,100%{ opacity:.55; transform:scale(.92); }
+  50%{ opacity:1; transform:scale(1); }
+}
+
+.badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  justify-content:flex-end;
+}
+.pill{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:999px;
+  border:1px solid rgba(27,36,68,.82);
+  background: rgba(7,10,18,.35);
+  color: var(--muted);
+  white-space:nowrap;
+}
+
+.actions{ margin-top:10px; }
+.toggleBtn{
+  width:100%;
+  border:none;
+  cursor:pointer;
+  padding:10px 12px;
+  border-radius:14px;
+  background: rgba(7,10,18,.35);
+  border: 1px solid rgba(27,36,68,.75);
+  color: rgba(251,113,133,.98);
+  font-size:12px;
+  font-weight:700;
+  transition:.2s;
+}
+.toggleBtn:hover{
+  border-color: rgba(225,29,72,.55);
+  box-shadow: 0 0 0 3px rgba(225,29,72,.10);
+}
+
+.details{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid rgba(27,36,68,.55);
+  display:none;
+  color: var(--muted);
+  font-size:12px;
+  line-height:1.9;
+}
+.box.expanded .details{ display:block; }
+
+.dBlock{
+  margin-top:10px;
+  padding:10px 10px;
+  border-radius:14px;
+  border:1px solid rgba(27,36,68,.65);
+  background: rgba(7,10,18,.22);
+}
+.dTitle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  font-weight:700;
+  color: var(--text);
+  margin-bottom:8px;
+}
+.dMeta{ color: var(--muted); font-weight:400; font-size:11px; }
+
+.dItem{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:6px 0;
+  border-bottom:1px solid rgba(27,36,68,.35);
+}
+.dItem:last-child{ border-bottom:none; }
+
+.domain{
+  direction:ltr;
+  text-align:left;
+  font-weight:700;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size:12px;
+  max-width: 68%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.dTag{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:999px;
+  border:1px solid rgba(27,36,68,.8);
+  background: rgba(7,10,18,.35);
+  color: var(--muted);
+  white-space:nowrap;
+}
+.dTag.ok{ border-color: rgba(34,197,94,.55); color:#d1fae5; }
+.dTag.fail{ border-color: rgba(239,68,68,.55); color:#fee2e2; }
+
+/* Loader */
+.loader{
+  position:absolute;
+  inset:0;
+  z-index:10;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background: rgba(0,0,0,.78);
+  backdrop-filter: blur(10px);
+}
+.loader.show{ display:flex; animation: fadeIn .2s ease; }
+@keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+
+.loaderBox{
+  width:min(520px, 92%);
+  text-align:center;
+  padding:18px 16px;
+  border-radius:22px;
+  border:1px solid rgba(225,29,72,.28);
+  background: rgba(11,16,34,.62);
+  box-shadow: 0 18px 80px rgba(0,0,0,.6);
+}
+
+.spinner{
+  width:110px;
+  height:110px;
+  margin: 6px auto 10px;
+  position:relative;
+  display:grid;
+  place-items:center;
+  filter: drop-shadow(0 18px 40px rgba(225,29,72,.30));
+}
+.spinner:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:
+    conic-gradient(from 210deg,
+      rgba(225,29,72,0) 0deg,
+      rgba(225,29,72,0) 210deg,
+      rgba(225,29,72,1) 270deg,
+      rgba(251,113,133,1) 310deg,
+      rgba(225,29,72,0) 360deg
+    );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 14px), #000 0);
+  opacity:.95;
+  animation: spin 1.0s linear infinite;
+}
+.spinner:after{
+  content:"";
+  position:absolute;
+  inset:14px;
+  border-radius:50%;
+  background: rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow: 0 0 0 1px rgba(225,29,72,.10) inset;
+}
+@keyframes spin{ to{ transform: rotate(360deg); } }
+
+.loaderTitle{ font-weight:700; font-size:15px; margin-top:4px; }
+.loaderStep{ margin-top:6px; color:var(--muted); font-size:13px; line-height:1.8; }
+
+.loaderExtra{
+  margin-top:10px;
+  display:none;
+  gap:10px;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+}
+.loaderExtra.show{ display:flex; }
+
+.loaderHint{
+  color: var(--muted);
+  font-size:12px;
+  line-height:1.8;
+}
+.cancelBtn{
+  width:min(260px, 86%);
+  border:none;
+  cursor:pointer;
+  padding:12px 14px;
+  border-radius:16px;
+  background: linear-gradient(135deg, var(--bad), rgba(239,68,68,.72));
+  color:white;
+  font-weight:700;
+  font-size:14px;
+  box-shadow: 0 12px 30px rgba(239,68,68,.20);
+}
+
+.footer{
+  margin-top:12px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.9;
+}
+</style>
 </head>
 
 <body>
-  <div class="wrap">
-    <header>
-      <h1>تست DNS از دید کاربر (DoH)</h1>
-      <div class="tag">بدون سرور • درخواست‌ها از IP خودِ کاربر ارسال می‌شود</div>
-    </header>
+<div class="container">
+  <div class="card">
 
-    <div class="grid">
-      <!-- Controls -->
-      <div class="card">
-        <div class="card-h">
-          <b>تنظیمات</b>
-          <span class="small">DNS-over-HTTPS</span>
-        </div>
+    <div class="loader" id="loader">
+      <div class="loaderBox">
+        <div class="spinner" aria-hidden="true"></div>
+        <div class="loaderTitle">تست DNS گیم رنتر</div>
+        <div class="loaderStep" id="loaderText">در حال آماده‌سازی هستیم…</div>
 
-        <div class="card-b">
-          <div class="row">
-            <div class="col">
-              <label>DNS اصلی</label>
-              <select id="primarySelect">
-                <option value="cloudflare">Cloudflare (cloudflare-dns.com)</option>
-                <option value="google">Google (dns.google)</option>
-                <option value="quad9">Quad9 (dns.quad9.net)</option>
-                <option value="adguard">AdGuard (dns.adguard.com)</option>
-                <option value="custom">Custom DoH URL…</option>
-              </select>
-              <input id="primaryCustom" class="hide" placeholder="مثال: https://dns.example.com/dns-query" />
-              <div class="help">
-                اگر “Custom” انتخاب کنی، باید **آدرس DoH** (نه IP خام) بدی. بیشتر DNSها IP-only توی مرورگر قابل تست نیستن.
-              </div>
-            </div>
-
-            <div class="col">
-              <label>DNS ثانویه (اختیاری)</label>
-              <select id="secondarySelect">
-                <option value="">— ندارد —</option>
-                <option value="cloudflare">Cloudflare</option>
-                <option value="google">Google</option>
-                <option value="quad9">Quad9</option>
-                <option value="adguard">AdGuard</option>
-                <option value="custom">Custom DoH URL…</option>
-              </select>
-              <input id="secondaryCustom" class="hide" placeholder="مثال: https://dns.example.com/dns-query" />
-              <div class="help">برای مقایسه، یک DNS دوم هم می‌تونی تست کنی.</div>
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:10px">
-            <div class="col">
-              <label>تعداد تلاش برای هر دامنه</label>
-              <select id="attempts">
-                <option value="1">۱ بار</option>
-                <option value="2" selected>۲ بار (پیشنهادی)</option>
-                <option value="3">۳ بار</option>
-              </select>
-              <div class="help">برای کاهش خطاهای لحظه‌ای شبکه، ۲ بار مناسب‌تره.</div>
-            </div>
-
-            <div class="col">
-              <label>Timeout هر درخواست (میلی‌ثانیه)</label>
-              <input id="timeoutMs" value="3500" inputmode="numeric" />
-              <div class="help">اگر اینترنت ضعیف باشه، مقدار رو مثلاً 5000 بذار.</div>
-            </div>
-          </div>
-
-          <div class="actions">
-            <button id="startBtn" class="btn-primary">شروع تست</button>
-            <button id="cancelBtn" class="btn-danger hide">انصراف</button>
-            <button id="resetBtn" class="btn-ghost">ریست</button>
-          </div>
-
-          <div style="margin-top:12px">
-            <div class="status" id="statusBox">
-              <span class="dot idle" id="statusDot"></span>
-              <div>
-                <div id="statusText" style="font-weight:800">آماده</div>
-                <div class="muted" id="statusSub">نتیجه‌ها از شبکه‌ی خودت (اینترنت/اپراتور) گرفته می‌شن.</div>
-              </div>
-            </div>
-
-            <div class="progress">
-              <div class="bar" id="bar"></div>
-            </div>
-
-            <div class="footer-note">
-              این تست “Resolve” رو با DoH انجام می‌ده، نه Ping واقعی. زمان‌ها، مدت پاسخ HTTP+DNS هستند.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Info -->
-      <div class="card">
-        <div class="card-h">
-          <b>راهنما</b>
-          <span class="pill">چرا نتایج قبلی غلط بود؟</span>
-        </div>
-        <div class="card-b">
-          <div class="help">
-            نسخه‌ی قبلی، DNS Resolve رو روی سرور Vercel انجام می‌داد؛ یعنی نتیجه‌ها از دید شبکه‌ی Vercel بود.
-            این نسخه درخواست‌ها رو مستقیم از مرورگر تو می‌زنه، پس برای موبایل/اپراتور/وای‌فای تو واقعی‌تره.
-          </div>
-          <div class="help">
-            اگر بخوای “IP خام DNS” رو دقیق تست کنی (UDP/TCP پورت 53)، باید اپ/کلاینت داشته باشی؛ مرورگر اجازه نمی‌ده.
-          </div>
+        <div class="loaderExtra" id="loaderExtra">
+          <div class="loaderHint">لطفاً کمی صبور باشید…</div>
+          <button class="cancelBtn" id="cancelBtn" type="button">انصراف</button>
         </div>
       </div>
     </div>
 
-    <!-- Results -->
-    <div class="results" id="results"></div>
+    <div class="header">
+      <img src="logo.png" alt="Game Renter">
+      <div class="brandName">تست DNS گیم رنتر</div>
+    </div>
+
+    <label>DNS را وارد کنید</label>
+    <div class="inputs">
+      <div class="inputWrap">
+        <input id="primary" inputmode="decimal" autocomplete="off"
+               placeholder="Primary DNS (مثل 8.8.8.8)">
+      </div>
+      <div class="inputWrap">
+        <input id="secondary" inputmode="decimal" autocomplete="off"
+               placeholder="Secondary DNS (اختیاری)">
+      </div>
+    </div>
+
+    <div class="helper">
+
+    </div>
+
+    <button id="btn">شروع تست</button>
+
+    <div class="progress"><i id="bar"></i></div>
+
+    <div class="errorBox" id="err"></div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="footer">
+      نتیجه‌ها بر اساس Resolve شدن دامنه‌های کلیدی هر سرویس است و ممکن است با اینترنت/منطقه فرق کند.
+    </div>
+
   </div>
+</div>
 
 <script>
-  // --------- Groups / Domains ----------
-  const GROUPS = {
-    xbox: {
-      label: "Xbox",
-      domains: ["xbox.com", "account.xbox.com", "login.live.com", "xsts.auth.xboxlive.com"]
-    },
-    playstation: {
-      label: "PlayStation",
-      domains: ["playstation.com", "id.sonyentertainmentnetwork.com", "auth.api.sonyentertainmentnetwork.com"]
-    },
-    games: {
-      label: "Games",
-      domains: ["store.steampowered.com", "epicgames.com", "ea.com", "battle.net"]
-    },
-    international: {
-      label: "International",
-      domains: ["google.com", "cloudflare.com", "github.com", "openai.com"]
-    },
-    internal: {
-      label: "Internal (IR)",
-      domains: ["aparat.com", "digikala.com", "snapp.ir", "divar.ir"]
+const btn = document.getElementById('btn');
+const primary = document.getElementById('primary');
+const secondary = document.getElementById('secondary');
+const bar = document.getElementById('bar');
+const err = document.getElementById('err');
+
+const loader = document.getElementById('loader');
+const loaderText = document.getElementById('loaderText');
+const loaderExtra = document.getElementById('loaderExtra');
+const cancelBtn = document.getElementById('cancelBtn');
+
+const grid = document.getElementById('grid');
+const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
+
+// --- DoH client-side (requests from user's IP) ---
+const PER_DOMAIN_TIMEOUT_MS = 3500;
+
+// Same domain groups as backend (order handled by GROUP_ORDER)
+const GROUPS = [
+  {
+    key: "xbox",
+    title: "سرورهای Xbox",
+    domains: [
+      "xbox.com",
+      "xboxlive.com",
+      "login.live.com",
+      "account.microsoft.com",
+      "storeedgefd.dsx.mp.microsoft.com",
+      "xsts.auth.xboxlive.com"
+    ],
+  },
+  {
+    key: "playstation",
+    title: "سرورهای PlayStation",
+    domains: [
+      "playstation.com",
+      "store.playstation.com",
+      "id.sonyentertainmentnetwork.com",
+      "auth.api.sonyentertainmentnetwork.com",
+      "image.api.playstation.com"
+    ],
+  },
+  {
+    key: "games",
+    title: "سرور بازی‌های پرطرفدار",
+    domains: [
+      "ea.com","help.ea.com","easports.com","origin.com",
+      "apexlegends.com","battlefield.com",
+      "callofduty.com","activision.com","battle.net",
+      "epicgames.com","fortnite.com",
+      "riotgames.com","leagueoflegends.com","valorant.com",
+      "steampowered.com","store.steampowered.com",
+      "ubisoft.com","account.ubisoft.com",
+    ],
+  },
+  {
+    key: "international",
+    title: "سرورهای بین‌المللی",
+    domains: [
+      "google.com","cloudflare.com","github.com","cdn.jsdelivr.net","akamai.com"
+    ],
+  },
+  {
+    key: "internal",
+    title: "سرورهای داخلی",
+    domains: [
+      "aparat.com","digikala.com","snapp.ir","divar.ir","rubika.ir"
+    ],
+  },
+];
+
+// Map common DNS IPs to DoH endpoints (browser can only test via HTTPS/DoH)
+const DOH_BY_IP = {
+  "1.1.1.1":   { name:"Cloudflare", kind:"dns-query", url:"https://cloudflare-dns.com/dns-query" },
+  "1.0.0.1":   { name:"Cloudflare", kind:"dns-query", url:"https://cloudflare-dns.com/dns-query" },
+  "8.8.8.8":   { name:"Google",     kind:"google-resolve", url:"https://dns.google/resolve" },
+  "8.8.4.4":   { name:"Google",     kind:"google-resolve", url:"https://dns.google/resolve" },
+  "9.9.9.9":   { name:"Quad9",      kind:"dns-query", url:"https://dns.quad9.net/dns-query" },
+  "149.112.112.112": { name:"Quad9", kind:"dns-query", url:"https://dns.quad9.net/dns-query" },
+  "94.140.14.14": { name:"AdGuard", kind:"dns-query", url:"https://dns.adguard.com/dns-query" },
+  "94.140.15.15": { name:"AdGuard", kind:"dns-query", url:"https://dns.adguard.com/dns-query" },
+  "208.67.222.222": { name:"OpenDNS", kind:"dns-query", url:"https://doh.opendns.com/dns-query" },
+  "208.67.220.220": { name:"OpenDNS", kind:"dns-query", url:"https://doh.opendns.com/dns-query" },
+};
+
+function providerFromIp(ip){
+  ip = normalizeDigits(ip);
+  const p = DOH_BY_IP[ip];
+  if(!p){
+    // Keep UI same, but be honest about browser limitations
+    throw new Error("این DNS از داخل مرورگر قابل تست نیست. مرورگر اجازه‌ی تست DNS با IP خام (پورت 53) را نمی‌دهد. لطفاً یکی از IPهای معروف DoH مثل 1.1.1.1 یا 8.8.8.8 یا 9.9.9.9 را وارد کنید.");
+  }
+  return p;
+}
+
+function withTimeout(signal, ms){
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), ms);
+  const onAbort = ()=>ctrl.abort();
+  if(signal) signal.addEventListener("abort", onAbort, { once:true });
+  return { ctrl, done: ()=>{ clearTimeout(t); if(signal) signal.removeEventListener("abort", onAbort); } };
+}
+
+async function dohResolveA(provider, domain, signal){
+  const t0 = performance.now();
+  const { ctrl, done } = withTimeout(signal, PER_DOMAIN_TIMEOUT_MS);
+
+  try{
+    let url;
+    let init = { cache:"no-store", signal: ctrl.signal, headers:{} };
+
+    if(provider.kind === "google-resolve"){
+      url = `${provider.url}?name=${encodeURIComponent(domain)}&type=A`;
+      // no special headers needed
+    } else {
+      // RFC8484-ish JSON response (widely supported by these endpoints)
+      url = `${provider.url}?name=${encodeURIComponent(domain)}&type=A`;
+      init.headers["accept"] = "application/dns-json";
     }
-  };
 
-  // --------- DoH Providers ----------
-  const DOH_PROVIDERS = {
-    cloudflare: { name: "Cloudflare", url: "https://cloudflare-dns.com/dns-query", mode: "rfc8484" },
-    google:     { name: "Google",     url: "https://dns.google/dns-query",          mode: "rfc8484" },
-    quad9:      { name: "Quad9",      url: "https://dns.quad9.net/dns-query",       mode: "rfc8484" },
-    adguard:    { name: "AdGuard",    url: "https://dns.adguard.com/dns-query",     mode: "rfc8484" }
-  };
+    const res = await fetch(url, init);
+    const data = await res.json().catch(()=>null);
 
-  // --------- UI ----------
-  const els = {
-    primarySelect: document.getElementById("primarySelect"),
-    primaryCustom: document.getElementById("primaryCustom"),
-    secondarySelect: document.getElementById("secondarySelect"),
-    secondaryCustom: document.getElementById("secondaryCustom"),
-    attempts: document.getElementById("attempts"),
-    timeoutMs: document.getElementById("timeoutMs"),
-    startBtn: document.getElementById("startBtn"),
-    cancelBtn: document.getElementById("cancelBtn"),
-    resetBtn: document.getElementById("resetBtn"),
-    statusDot: document.getElementById("statusDot"),
-    statusText: document.getElementById("statusText"),
-    statusSub: document.getElementById("statusSub"),
-    bar: document.getElementById("bar"),
-    results: document.getElementById("results")
-  };
+    const ms = Math.round(performance.now() - t0);
+    const answers = data && Array.isArray(data.Answer) ? data.Answer : [];
+    const ok = !!answers.find(a => a && a.type === 1 && typeof a.data === "string");
 
-  function setStatus(kind, text, sub){
-    els.statusDot.className = "dot " + (kind || "idle");
-    els.statusText.textContent = text || "";
-    els.statusSub.textContent = sub || "";
+    return { domain, ok, ms };
+  } catch(e){
+    const ms = Math.round(performance.now() - t0);
+    return { domain, ok:false, ms };
+  } finally {
+    done();
+  }
+}
+
+function summarizeGroup(key, title, items){
+  const okItems = items.filter(x=>x.ok);
+  const okCount = okItems.length;
+  const total = items.length;
+  const avgMs = okCount ? Math.round(okItems.reduce((a,x)=>a+x.ms,0)/okCount) : null;
+  return {
+    key,
+    title,
+    items,
+    okCount,
+    total,
+    avgMs,
+    status: okCount === 0 ? "fail" : "ok"
+  };
+}
+
+async function runProviderTest(provider, signal, onStep){
+  const out = [];
+  let anyOk = false;
+
+  for(const g of GROUPS){
+    const items = [];
+    for(const d of g.domains){
+      if(signal && signal.aborted) throw new DOMException("Aborted","AbortError");
+      const r = await dohResolveA(provider, d, signal);
+      items.push(r);
+      if(r.ok) anyOk = true;
+      if(onStep) onStep(g.key, d);
+    }
+    out.push(summarizeGroup(g.key, g.title, items));
   }
 
-  function setProgress(pct){
-    const clamped = Math.max(0, Math.min(100, pct));
-    els.bar.style.width = clamped + "%";
+  return { groups: out, dnsOk: anyOk, providerName: provider.name };
+}
+
+
+let currentController = null;
+let hardTimeoutId = null;
+let softTimeoutId = null;
+
+function normalizeDigits(input){
+  const map = {
+    "۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9",
+    "٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9",
+    "٫":".","٬":"","،":"."," ":""
+  };
+  return (input||"").toString().trim().split("").map(ch => map[ch] ?? ch).join("");
+}
+function looksLikeIp(ip){
+  ip = normalizeDigits(ip);
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip);
+}
+
+function showError(msg){
+  err.textContent = msg;
+  err.classList.add('show');
+}
+function clearError(){
+  err.textContent = '';
+  err.classList.remove('show');
+}
+
+function showLoader(text){
+  loaderText.textContent = text;
+  loaderExtra.classList.remove('show');
+  loader.classList.add('show');
+}
+function setLoaderText(text){ loaderText.textContent = text; }
+function hideLoader(){ loader.classList.remove('show'); loaderExtra.classList.remove('show'); }
+
+function fakeProgress(){
+  let p = 6;
+  bar.style.width = '6%';
+  const t = setInterval(()=>{
+    p = Math.min(92, p + Math.random()*10);
+    bar.style.width = Math.floor(p) + '%';
+  }, 220);
+  return ()=>clearInterval(t);
+}
+
+function friendlyError(apiError){
+  switch(apiError){
+    case "invalid_primary":
+      return "Primary DNS معتبر نیست. نمونه: 8.8.8.8";
+    case "invalid_secondary":
+      return "Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.";
+    case "private_primary":
+      return "Primary DNS خصوصی/لوکال است. بهتر است یک DNS عمومی وارد کنید.";
+    case "private_secondary":
+      return "Secondary DNS خصوصی/لوکال است. اگر وارد می‌کنید، بهتر است عمومی باشد.";
+    case "same_dns":
+      return "Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.";
+    case "server_error":
+      return "یک مشکل سمت سرور پیش آمد. لطفاً دوباره امتحان کنید.";
+    default:
+      return "یک خطا رخ داد. لطفاً دوباره امتحان کنید.";
+  }
+}
+
+function shortenDomain(d){
+  d = String(d || "");
+  if(d.length <= 26) return d;
+  const start = d.slice(0, 12);
+  const end = d.slice(-10);
+  return `${start}…${end}`;
+}
+
+function buildCards(templateGroups){
+  grid.innerHTML = templateGroups.map(g => `
+    <div class="box testing" id="box-${g.key}">
+      <div class="boxHead">
+        <div class="boxTitle">
+          <span class="icon">${g.icon}</span>
+          <div class="boxTitleText">${g.title}</div>
+        </div>
+        <div class="state">
+          <div class="stateTop">
+            <span class="light"></span>
+            <span id="state-${g.key}">آماده</span>
+          </div>
+          <div class="badges">
+            <span class="pill" id="p-${g.key}">Primary: -</span>
+            <span class="pill" id="s-${g.key}">Secondary: -</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات بیشتر</button>
+      </div>
+
+      <div class="details" id="details-${g.key}">
+        هنوز تست انجام نشده است.
+      </div>
+    </div>
+  `).join("");
+
+  grid.querySelectorAll(".toggleBtn").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const key = b.getAttribute("data-key");
+      const box = document.getElementById(`box-${key}`);
+      const open = b.getAttribute("data-open") === "1";
+      if(open){
+        box.classList.remove("expanded");
+        b.textContent = "جزئیات بیشتر";
+        b.setAttribute("data-open","0");
+      } else {
+        box.classList.add("expanded");
+        b.textContent = "بستن جزئیات";
+        b.setAttribute("data-open","1");
+      }
+    });
+  });
+}
+
+function setAllTesting(){
+  bar.style.width = "0%";
+  clearError();
+
+  document.querySelectorAll(".box").forEach(b=>{
+    b.classList.remove("ok","fail","expanded");
+    b.classList.add("testing");
+  });
+
+  for(const k of GROUP_ORDER){
+    const st = document.getElementById(`state-${k}`);
+    if(st) st.textContent = "در حال تست…";
+    const p = document.getElementById(`p-${k}`); if(p) p.textContent = "Primary: …";
+    const s = document.getElementById(`s-${k}`); if(s) s.textContent = "Secondary: …";
+    const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال دریافت نتیجه…";
+  }
+}
+
+function renderDnsBlock(label, g){
+  if(!g){
+    return `
+      <div class="dBlock">
+        <div class="dTitle">
+          <span>${label}</span>
+          <span class="dMeta">وارد نشده</span>
+        </div>
+      </div>
+    `;
   }
 
-  function normalizeNumber(str){
-    // Persian/Arabic digits to English
-    const map = {
-      "۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9",
-      "٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9"
+  const meta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
+  const items = (g.items || []).map(it=>{
+    const tagCls = it.ok ? "ok" : "fail";
+    const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
+    const shown = shortenDomain(it.domain);
+    return `
+      <div class="dItem">
+        <div class="domain" title="${it.domain}">${shown}</div>
+        <span class="dTag ${tagCls}">${tagTxt}</span>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="dBlock">
+      <div class="dTitle">
+        <span>${label}</span>
+        <span class="dMeta">${meta}</span>
+      </div>
+      ${items}
+    </div>
+  `;
+}
+
+function renderGroup(key, gp, gs){
+  const box = document.getElementById(`box-${key}`);
+  const stateEl = document.getElementById(`state-${key}`);
+  const pEl = document.getElementById(`p-${key}`);
+  const sEl = document.getElementById(`s-${key}`);
+  const details = document.getElementById(`details-${key}`);
+
+  const overallOk = (gp && gp.status === "ok") || (gs && gs.status === "ok");
+
+  box.classList.remove("testing");
+  box.classList.add(overallOk ? "ok" : "fail");
+
+  stateEl.textContent = overallOk ? "قابل استفاده ✅" : "مشکل دارد ❌";
+
+  pEl.textContent = gp ? `Primary: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "Primary: -";
+  sEl.textContent = gs ? `Secondary: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : "Secondary: -";
+
+  details.innerHTML = `
+    ${renderDnsBlock("Primary DNS", gp)}
+    ${renderDnsBlock("Secondary DNS", gs)}
+  `;
+}
+
+function clearTimers(){
+  if(hardTimeoutId) clearTimeout(hardTimeoutId);
+  if(softTimeoutId) clearTimeout(softTimeoutId);
+  hardTimeoutId = null;
+  softTimeoutId = null;
+}
+
+function cancelRequest(reason){
+  try{
+    if(currentController) currentController.abort();
+  } catch(e){}
+  currentController = null;
+  clearTimers();
+  hideLoader();
+  bar.style.width = "100%";
+  showError(reason || "تست متوقف شد.");
+  btn.disabled = false;
+}
+
+(function init(){
+  const templates = [
+    { key:"xbox", title:"سرورهای Xbox", icon:"🎮" },
+    { key:"playstation", title:"سرورهای PlayStation", icon:"🎮" },
+    { key:"games", title:"سرور بازی‌های پرطرفدار", icon:"🔥" },
+    { key:"international", title:"سرورهای بین‌المللی", icon:"🌍" },
+    { key:"internal", title:"سرورهای داخلی", icon:"🇮🇷" },
+  ];
+  buildCards(templates);
+})();
+
+cancelBtn.onclick = ()=> cancelRequest("تست متوقف شد.");
+
+btn.onclick = async ()=>{
+  clearError();
+  clearTimers();
+
+  const p = normalizeDigits(primary.value.trim());
+  const s = normalizeDigits(secondary.value.trim());
+
+  if(!p || !looksLikeIp(p)){
+    showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8");
+    return;
+  }
+  if(s && !looksLikeIp(s)){
+    showError("Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.");
+    return;
+  }
+  if(s && s === p){
+    showError("Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.");
+    return;
+  }
+
+  btn.disabled = true;
+  setAllTesting();
+  showLoader("در حال آماده‌سازی هستیم…");
+
+  softTimeoutId = setTimeout(()=> loaderExtra.classList.add("show"), 20000);
+  hardTimeoutId = setTimeout(()=> cancelRequest("خطا در سرور"), 120000);
+
+  const stop = fakeProgress();
+  currentController = new AbortController();
+
+  try{
+    setLoaderText("در حال تست سرورهای Xbox هستیم…");
+    await new Promise(r=>setTimeout(r, 220));
+    setLoaderText("در حال تست سرورهای PlayStation هستیم…");
+    await new Promise(r=>setTimeout(r, 220));
+    setLoaderText("در حال تست سرور بازی‌های پرطرفدار هستیم…");
+    await new Promise(r=>setTimeout(r, 220));
+    setLoaderText("در حال تست سرورهای بین‌المللی هستیم…");
+    await new Promise(r=>setTimeout(r, 220));
+    setLoaderText("در حال تست سرورهای داخلی هستیم…");
+
+    // اجرای تست‌ها از داخل مرورگر (از IP خود کاربر) با DoH
+    const primaryProv = providerFromIp(p);
+    const secondaryProv = s ? providerFromIp(s) : null;
+
+    const primaryRes = await runProviderTest(primaryProv, currentController.signal);
+    const secondaryRes = secondaryProv ? await runProviderTest(secondaryProv, currentController.signal) : null;
+
+    const j = {
+      ok: true,
+      results: {
+        primary: primaryRes,
+        secondary: secondaryRes
+      }
     };
-    return String(str || "").replace(/[۰-۹٠-٩]/g, d => map[d] ?? d);
-  }
 
-  function isValidHttpUrl(s){
-    try{
-      const u = new URL(s);
-      return u.protocol === "https:" || u.protocol === "http:";
-    }catch{ return false; }
-  }
 
-  function getProviderFromUI(which){
-    const select = which === "primary" ? els.primarySelect : els.secondarySelect;
-    const custom = which === "primary" ? els.primaryCustom : els.secondaryCustom;
-    const v = select.value;
+    stop();
+    bar.style.width = "100%";
+    clearTimers();
+    currentController = null;
 
-    if (!v) return null;
-
-    if (v === "custom"){
-      const url = (custom.value || "").trim();
-      if (!isValidHttpUrl(url)) throw new Error("آدرس Custom معتبر نیست. باید با http/https شروع شود.");
-      return { name: "Custom", url, mode: "rfc8484" };
+    if(!j.ok){
+      hideLoader();
+      showError(friendlyError(j.error));
+      btn.disabled = false;
+      return;
     }
 
-    const p = DOH_PROVIDERS[v];
-    if (!p) throw new Error("DNS انتخاب‌شده معتبر نیست.");
-    return p;
-  }
+    // ✅ اگر DNS عملاً هیچ دامنه‌ای رو resolve نکرد
+    const primaryOk = j.results?.primary?.dnsOk !== false;
+    const secondaryOk = j.results?.secondary ? (j.results.secondary.dnsOk !== false) : true;
 
-  function toggleCustomInputs(){
-    els.primaryCustom.classList.toggle("hide", els.primarySelect.value !== "custom");
-    els.secondaryCustom.classList.toggle("hide", els.secondarySelect.value !== "custom");
-  }
-  els.primarySelect.addEventListener("change", toggleCustomInputs);
-  els.secondarySelect.addEventListener("change", toggleCustomInputs);
-  toggleCustomInputs();
-
-  // --------- DoH resolve (JSON) ----------
-  async function dohResolveA({ dohUrl, name, timeoutMs, signal }){
-    // RFC8484 JSON via ?name=&type= and Accept: application/dns-json is widely supported.
-    // We'll use GET for simplicity.
-    const url = new URL(dohUrl);
-    // Some providers accept /dns-query with query params; keep path intact
-    url.searchParams.set("name", name);
-    url.searchParams.set("type", "A");
-
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(new Error("timeout")), timeoutMs);
-
-    // Combine signals (user cancel + local timeout)
-    const onAbort = () => ctrl.abort(new Error("aborted"));
-    if (signal) signal.addEventListener("abort", onAbort, { once:true });
-
-    const t0 = performance.now();
-    try{
-      const res = await fetch(url.toString(), {
-        method: "GET",
-        headers: { "accept": "application/dns-json" },
-        signal: ctrl.signal
-      });
-      const data = await res.json().catch(() => null);
-      const ms = Math.round(performance.now() - t0);
-
-      // DNS JSON formats vary slightly; we check Answer A records (type=1) or Status==0
-      const answers = data && Array.isArray(data.Answer) ? data.Answer : [];
-      const ok = !!answers.find(a => a && a.type === 1 && typeof a.data === "string");
-
-      return { ok, ms, data };
-    }catch(e){
-      const ms = Math.round(performance.now() - t0);
-      return { ok:false, ms, error: (e && e.message) ? e.message : "error" };
-    }finally{
-      clearTimeout(t);
-      if (signal) signal.removeEventListener("abort", onAbort);
-    }
-  }
-
-  function median(arr){
-    const a = arr.slice().sort((x,y)=>x-y);
-    const n = a.length;
-    if (!n) return null;
-    const mid = Math.floor(n/2);
-    return n%2 ? a[mid] : Math.round((a[mid-1] + a[mid]) / 2);
-  }
-
-  async function testOneDomain(provider, domain, attempts, timeoutMs, signal){
-    // Try multiple attempts; take best success time; if all fail, take median of ms for reporting
-    const times = [];
-    let bestOk = null;
-
-    for (let i=0;i<attempts;i++){
-      if (signal?.aborted) return { domain, ok:false, ms:null, error:"aborted" };
-
-      const r = await dohResolveA({ dohUrl: provider.url, name: domain, timeoutMs, signal });
-      times.push(r.ms);
-
-      if (r.ok){
-        if (bestOk === null || r.ms < bestOk) bestOk = r.ms;
-      }
-      // tiny gap to avoid burst
-      await new Promise(res=>setTimeout(res, 80));
+    if(!primaryOk && !secondaryOk){
+      hideLoader();
+      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
+      btn.disabled = false;
+      return;
     }
 
-    if (bestOk !== null){
-      return { domain, ok:true, ms:bestOk };
-    }
-    return { domain, ok:false, ms: median(times) ?? null };
-  }
-
-  async function testProvider(provider, attempts, timeoutMs, signal, onProgress){
-    const groupsOut = {};
-    let anyOk = false;
-
-    const groupKeys = Object.keys(GROUPS);
-    let done = 0;
-    const total = groupKeys.reduce((sum,k)=>sum+GROUPS[k].domains.length, 0);
-
-    for (const gk of groupKeys){
-      const g = GROUPS[gk];
-      const items = [];
-
-      for (const d of g.domains){
-        const r = await testOneDomain(provider, d, attempts, timeoutMs, signal);
-        items.push(r);
-        if (r.ok) anyOk = true;
-
-        done++;
-        onProgress?.(done, total, gk, d);
-      }
-
-      groupsOut[gk] = { label: g.label, items };
+    // اگر فقط یکی مشکل داشت، پیام رو نمایش می‌دیم ولی نتیجه‌ها هم میاد
+    if(!primaryOk || (j.results?.secondary && !secondaryOk)){
+      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
     }
 
-    return { provider, dnsOk: anyOk, groups: groupsOut };
-  }
+    const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
+    const secondaryGroups = Object.fromEntries((j.results?.secondary?.groups || []).map(g=>[g.key, g]));
 
-  function renderResults(all){
-    els.results.innerHTML = "";
-
-    for (const entry of all){
-      if (!entry) continue;
-
-      const wrap = document.createElement("div");
-      wrap.className = "card";
-
-      const h = document.createElement("div");
-      h.className = "card-h";
-      const title = document.createElement("b");
-      title.textContent = `نتایج: ${entry.provider.name}`;
-      const sub = document.createElement("span");
-      sub.className = "pill";
-      sub.textContent = entry.dnsOk ? "DNS OK" : "هیچ دامنه‌ای Resolve نشد";
-      sub.style.borderColor = entry.dnsOk ? "rgba(34,197,94,.25)" : "rgba(239,68,68,.25)";
-      sub.style.color = entry.dnsOk ? "#b9f6cd" : "#ffd1d1";
-      h.appendChild(title); h.appendChild(sub);
-
-      const b = document.createElement("div");
-      b.className = "card-b";
-
-      const groups = entry.groups;
-      for (const gk of Object.keys(groups)){
-        const g = groups[gk];
-        const box = document.createElement("div");
-        box.className = "group";
-
-        const gh = document.createElement("div");
-        gh.className = "group-h";
-        const left = document.createElement("div");
-        left.className = "title";
-        const gTitle = document.createElement("b");
-        gTitle.textContent = g.label;
-        left.appendChild(gTitle);
-
-        const okCount = g.items.filter(x=>x.ok).length;
-        const pill = document.createElement("span");
-        pill.className = "pill";
-        pill.textContent = `${okCount}/${g.items.length} OK`;
-
-        gh.appendChild(left);
-        gh.appendChild(pill);
-
-        const list = document.createElement("div");
-        list.className = "list";
-
-        for (const it of g.items){
-          const row = document.createElement("div");
-          row.className = "item";
-
-          const l = document.createElement("div");
-          l.className = "left";
-          const dot = document.createElement("span");
-          dot.className = "dot " + (it.ok ? "ok" : "bad");
-          const name = document.createElement("span");
-          name.className = "name";
-          name.textContent = it.domain;
-          l.appendChild(dot); l.appendChild(name);
-
-          const r = document.createElement("div");
-          r.style.display = "flex";
-          r.style.alignItems = "center";
-          r.style.gap = "10px";
-
-          const time = document.createElement("span");
-          time.className = "time";
-          time.textContent = (it.ms === null || it.ms === undefined) ? "—" : `${it.ms} ms`;
-
-          const badge = document.createElement("span");
-          badge.className = "badge " + (it.ok ? "ok" : "bad");
-          badge.textContent = it.ok ? "OK" : "FAIL";
-
-          r.appendChild(time);
-          r.appendChild(badge);
-
-          row.appendChild(l);
-          row.appendChild(r);
-          list.appendChild(row);
-        }
-
-        box.appendChild(gh);
-        box.appendChild(list);
-        b.appendChild(box);
-      }
-
-      wrap.appendChild(h);
-      wrap.appendChild(b);
-      els.results.appendChild(wrap);
+    for(const key of GROUP_ORDER){
+      const gp = primaryGroups[key] || null;
+      const gs = (j.results?.secondary ? (secondaryGroups[key] || null) : null);
+      renderGroup(key, gp, gs);
+      await new Promise(r=>setTimeout(r, 120));
     }
-  }
 
-  // --------- Run / Cancel / Reset ----------
-  let currentAbort = null;
+    setLoaderText("تست کامل شد ✅");
+    await new Promise(r=>setTimeout(r, 220));
+    hideLoader();
 
-  function lockUi(isLocked){
-    els.startBtn.classList.toggle("disabled", isLocked);
-    els.primarySelect.disabled = isLocked;
-    els.secondarySelect.disabled = isLocked;
-    els.primaryCustom.disabled = isLocked;
-    els.secondaryCustom.disabled = isLocked;
-    els.attempts.disabled = isLocked;
-    els.timeoutMs.disabled = isLocked;
-  }
+  } catch(e){
+    stop();
+    bar.style.width = "100%";
+    clearTimers();
 
-  els.resetBtn.addEventListener("click", () => {
-    if (currentAbort) currentAbort.abort();
-    currentAbort = null;
-    els.results.innerHTML = "";
-    setStatus("idle","آماده","نتیجه‌ها از شبکه‌ی خودت (اینترنت/اپراتور) گرفته می‌شن.");
-    setProgress(0);
-    els.cancelBtn.classList.add("hide");
-    lockUi(false);
-  });
-
-  els.cancelBtn.addEventListener("click", () => {
-    if (currentAbort) currentAbort.abort();
-    setStatus("warn","لغو شد","درخواست‌ها متوقف شدند.");
-    els.cancelBtn.classList.add("hide");
-    lockUi(false);
-  });
-
-  els.startBtn.addEventListener("click", async () => {
-    try{
-      // Prepare
-      const attempts = Number(normalizeNumber(els.attempts.value)) || 2;
-      const timeoutMs = Number(normalizeNumber(els.timeoutMs.value)) || 3500;
-
-      const primary = getProviderFromUI("primary");
-      const secondary = getProviderFromUI("secondary");
-
-      if (!primary) throw new Error("DNS اصلی را انتخاب کن.");
-      if (primarySelect.value === "custom" && !els.primaryCustom.value.trim()) throw new Error("برای DNS اصلی، آدرس Custom را وارد کن.");
-
-      if (secondary && secondarySelect.value === "custom" && !els.secondaryCustom.value.trim()) {
-        throw new Error("برای DNS ثانویه، آدرس Custom را وارد کن یا حالت “ندارد” را انتخاب کن.");
-      }
-
-      // Reset UI
-      els.results.innerHTML = "";
-      setProgress(0);
-      setStatus("warn","در حال تست...","اگر اینترنت ضعیف است، Timeout را بالاتر ببر.");
-      els.cancelBtn.classList.remove("hide");
-      lockUi(true);
-
-      // Abort controller
-      currentAbort = new AbortController();
-      const signal = currentAbort.signal;
-
-      const providersToTest = [primary, secondary].filter(Boolean);
-      const totalDomains = Object.values(GROUPS).reduce((s,g)=>s+g.domains.length,0) * providersToTest.length;
-      let completed = 0;
-
-      const allResults = [];
-
-      for (let idx=0; idx<providersToTest.length; idx++){
-        const p = providersToTest[idx];
-
-        setStatus("warn", `در حال تست: ${p.name}`, "درخواست‌ها از مرورگر شما ارسال می‌شوند.");
-
-        const r = await testProvider(
-          p,
-          attempts,
-          timeoutMs,
-          signal,
-          (done, total, gk, domain) => {
-            // overall progress
-            // done is per-provider; completed should count across providers
-            // We map: completed = idx*total + done
-            completed = idx*total + done;
-            const pct = Math.round((completed / totalDomains) * 100);
-            setProgress(pct);
-          }
-        );
-
-        allResults.push(r);
-      }
-
-      // Done
-      const anyProviderOk = allResults.some(x=>x.dnsOk);
-      if (signal.aborted){
-        setStatus("warn","لغو شد","درخواست‌ها متوقف شدند.");
-      }else{
-        setStatus(anyProviderOk ? "ok" : "bad",
-          anyProviderOk ? "تست کامل شد" : "هیچ دامنه‌ای Resolve نشد",
-          anyProviderOk ? "نتیجه‌ها از دید اینترنت/اپراتور شما هستند." : "ممکن است DoH فیلتر/قطع باشد یا اینترنت مشکل داشته باشد."
-        );
-      }
-
-      renderResults(allResults);
-
-    }catch(err){
-      setStatus("bad","خطا", (err && err.message) ? err.message : "مشکل ناشناخته");
-    }finally{
-      els.cancelBtn.classList.add("hide");
-      lockUi(false);
-      currentAbort = null;
+    if(e && e.name === "AbortError"){
+      hideLoader();
+      showError("تست متوقف شد.");
+      btn.disabled = false;
+      return;
     }
-  });
 
+    hideLoader();
+    showError((e && e.message) ? e.message : "خطا در سرور");
+}
+
+  setTimeout(()=>btn.disabled=false, 350);
+};
 </script>
 </body>
 </html>
