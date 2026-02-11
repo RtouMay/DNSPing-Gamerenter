@@ -550,164 +550,6 @@ const cancelBtn = document.getElementById('cancelBtn');
 const grid = document.getElementById('grid');
 const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
 
-// --- DoH client-side (requests from user's IP) ---
-const PER_DOMAIN_TIMEOUT_MS = 3500;
-
-// Same domain groups as backend (order handled by GROUP_ORDER)
-const GROUPS = [
-  {
-    key: "xbox",
-    title: "سرورهای Xbox",
-    domains: [
-      "xbox.com",
-      "xboxlive.com",
-      "login.live.com",
-      "account.microsoft.com",
-      "storeedgefd.dsx.mp.microsoft.com",
-      "xsts.auth.xboxlive.com"
-    ],
-  },
-  {
-    key: "playstation",
-    title: "سرورهای PlayStation",
-    domains: [
-      "playstation.com",
-      "store.playstation.com",
-      "id.sonyentertainmentnetwork.com",
-      "auth.api.sonyentertainmentnetwork.com",
-      "image.api.playstation.com"
-    ],
-  },
-  {
-    key: "games",
-    title: "سرور بازی‌های پرطرفدار",
-    domains: [
-      "ea.com","help.ea.com","easports.com","origin.com",
-      "apexlegends.com","battlefield.com",
-      "callofduty.com","activision.com","battle.net",
-      "epicgames.com","fortnite.com",
-      "riotgames.com","leagueoflegends.com","valorant.com",
-      "steampowered.com","store.steampowered.com",
-      "ubisoft.com","account.ubisoft.com",
-    ],
-  },
-  {
-    key: "international",
-    title: "سرورهای بین‌المللی",
-    domains: [
-      "google.com","cloudflare.com","github.com","cdn.jsdelivr.net","akamai.com"
-    ],
-  },
-  {
-    key: "internal",
-    title: "سرورهای داخلی",
-    domains: [
-      "aparat.com","digikala.com","snapp.ir","divar.ir","rubika.ir"
-    ],
-  },
-];
-
-// Map common DNS IPs to DoH endpoints (browser can only test via HTTPS/DoH)
-const DOH_BY_IP = {
-  "1.1.1.1":   { name:"Cloudflare", kind:"dns-query", url:"https://cloudflare-dns.com/dns-query" },
-  "1.0.0.1":   { name:"Cloudflare", kind:"dns-query", url:"https://cloudflare-dns.com/dns-query" },
-  "8.8.8.8":   { name:"Google",     kind:"google-resolve", url:"https://dns.google/resolve" },
-  "8.8.4.4":   { name:"Google",     kind:"google-resolve", url:"https://dns.google/resolve" },
-  "9.9.9.9":   { name:"Quad9",      kind:"dns-query", url:"https://dns.quad9.net/dns-query" },
-  "149.112.112.112": { name:"Quad9", kind:"dns-query", url:"https://dns.quad9.net/dns-query" },
-  "94.140.14.14": { name:"AdGuard", kind:"dns-query", url:"https://dns.adguard.com/dns-query" },
-  "94.140.15.15": { name:"AdGuard", kind:"dns-query", url:"https://dns.adguard.com/dns-query" },
-  "208.67.222.222": { name:"OpenDNS", kind:"dns-query", url:"https://doh.opendns.com/dns-query" },
-  "208.67.220.220": { name:"OpenDNS", kind:"dns-query", url:"https://doh.opendns.com/dns-query" },
-};
-
-function providerFromIp(ip){
-  ip = normalizeDigits(ip);
-  const p = DOH_BY_IP[ip];
-  if(!p){
-    // Keep UI same, but be honest about browser limitations
-    throw new Error("این DNS از داخل مرورگر قابل تست نیست. مرورگر اجازه‌ی تست DNS با IP خام (پورت 53) را نمی‌دهد. لطفاً یکی از IPهای معروف DoH مثل 1.1.1.1 یا 8.8.8.8 یا 9.9.9.9 را وارد کنید.");
-  }
-  return p;
-}
-
-function withTimeout(signal, ms){
-  const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(), ms);
-  const onAbort = ()=>ctrl.abort();
-  if(signal) signal.addEventListener("abort", onAbort, { once:true });
-  return { ctrl, done: ()=>{ clearTimeout(t); if(signal) signal.removeEventListener("abort", onAbort); } };
-}
-
-async function dohResolveA(provider, domain, signal){
-  const t0 = performance.now();
-  const { ctrl, done } = withTimeout(signal, PER_DOMAIN_TIMEOUT_MS);
-
-  try{
-    let url;
-    let init = { cache:"no-store", signal: ctrl.signal, headers:{} };
-
-    if(provider.kind === "google-resolve"){
-      url = `${provider.url}?name=${encodeURIComponent(domain)}&type=A`;
-      // no special headers needed
-    } else {
-      // RFC8484-ish JSON response (widely supported by these endpoints)
-      url = `${provider.url}?name=${encodeURIComponent(domain)}&type=A`;
-      init.headers["accept"] = "application/dns-json";
-    }
-
-    const res = await fetch(url, init);
-    const data = await res.json().catch(()=>null);
-
-    const ms = Math.round(performance.now() - t0);
-    const answers = data && Array.isArray(data.Answer) ? data.Answer : [];
-    const ok = !!answers.find(a => a && a.type === 1 && typeof a.data === "string");
-
-    return { domain, ok, ms };
-  } catch(e){
-    const ms = Math.round(performance.now() - t0);
-    return { domain, ok:false, ms };
-  } finally {
-    done();
-  }
-}
-
-function summarizeGroup(key, title, items){
-  const okItems = items.filter(x=>x.ok);
-  const okCount = okItems.length;
-  const total = items.length;
-  const avgMs = okCount ? Math.round(okItems.reduce((a,x)=>a+x.ms,0)/okCount) : null;
-  return {
-    key,
-    title,
-    items,
-    okCount,
-    total,
-    avgMs,
-    status: okCount === 0 ? "fail" : "ok"
-  };
-}
-
-async function runProviderTest(provider, signal, onStep){
-  const out = [];
-  let anyOk = false;
-
-  for(const g of GROUPS){
-    const items = [];
-    for(const d of g.domains){
-      if(signal && signal.aborted) throw new DOMException("Aborted","AbortError");
-      const r = await dohResolveA(provider, d, signal);
-      items.push(r);
-      if(r.ok) anyOk = true;
-      if(onStep) onStep(g.key, d);
-    }
-    out.push(summarizeGroup(g.key, g.title, items));
-  }
-
-  return { groups: out, dnsOk: anyOk, providerName: provider.name };
-}
-
-
 let currentController = null;
 let hardTimeoutId = null;
 let softTimeoutId = null;
@@ -936,6 +778,231 @@ function cancelRequest(reason){
 
 cancelBtn.onclick = ()=> cancelRequest("تست متوقف شد.");
 
+
+// ====== Browser-side (User IP) test helpers: DoH + smarter metrics ======
+const DOH_MAP = {
+  // Cloudflare
+  "1.1.1.1": "https://cloudflare-dns.com/dns-query",
+  "1.0.0.1": "https://cloudflare-dns.com/dns-query",
+  // Google
+  "8.8.8.8": "https://dns.google/dns-query",
+  "8.8.4.4": "https://dns.google/dns-query",
+  // Quad9
+  "9.9.9.9": "https://dns.quad9.net/dns-query",
+  "149.112.112.112": "https://dns.quad9.net/dns-query",
+  // AdGuard
+  "94.140.14.14": "https://dns.adguard.com/dns-query",
+  "94.140.15.15": "https://dns.adguard.com/dns-query",
+  // OpenDNS
+  "208.67.222.222": "https://doh.opendns.com/dns-query",
+  "208.67.220.220": "https://doh.opendns.com/dns-query"
+};
+
+// Conservative defaults: more accurate than single-shot, still fast enough for WebApp
+const ATTEMPTS_PER_DOMAIN = 2;          // retries (median-based)
+const PER_REQ_TIMEOUT_MS = 3500;        // per DoH request timeout
+const CONCURRENCY = 4;                  // parallelism per group
+
+function isHttpUrl(v){
+  try{
+    const u = new URL(v);
+    return u.protocol === "https:" || u.protocol === "http:";
+  }catch(e){
+    return false;
+  }
+}
+
+function median(nums){
+  const a = (nums || []).slice().sort((x,y)=>x-y);
+  if(!a.length) return null;
+  const mid = Math.floor(a.length/2);
+  return a.length % 2 ? a[mid] : Math.round((a[mid-1]+a[mid])/2);
+}
+
+function avgMs(items){
+  const ok = (items || []).filter(x=>x && x.ok && typeof x.ms === "number").map(x=>x.ms);
+  if(!ok.length) return null;
+  return Math.round(ok.reduce((s,v)=>s+v,0)/ok.length);
+}
+
+function groupStatus(items){
+  const okCount = (items || []).filter(x=>x && x.ok).length;
+  if(okCount === 0) return "fail";
+  if(okCount === items.length) return "ok";
+  return "warn";
+}
+
+function allFailed(groups){
+  return (groups || []).every(g => g && g.okCount === 0);
+}
+
+function withTimeout(promise, ms, signal){
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(new Error("timeout")), ms);
+  const onAbort = ()=>ctrl.abort(new Error("aborted"));
+  if(signal) signal.addEventListener("abort", onAbort, { once:true });
+
+  return Promise.race([
+    promise(ctrl.signal),
+    new Promise((_,rej)=>ctrl.signal.addEventListener("abort", ()=>rej(ctrl.signal.reason || new Error("aborted")), { once:true }))
+  ]).finally(()=>{
+    clearTimeout(t);
+    if(signal) signal.removeEventListener("abort", onAbort);
+  });
+}
+
+async function dohResolveA(dohUrl, domain, signal){
+  // cache-bust to avoid intermediary caches; DNS caches may still exist (normal)
+  const cb = Math.random().toString(16).slice(2);
+  const u = new URL(dohUrl);
+  u.searchParams.set("name", domain);
+  u.searchParams.set("type", "A");
+  u.searchParams.set("cb", cb);
+
+  const t0 = performance.now();
+  const res = await fetch(u.toString(), {
+    method: "GET",
+    cache: "no-store",
+    headers: { "accept": "application/dns-json" },
+    signal
+  });
+  let data = null;
+  try{ data = await res.json(); }catch(e){}
+
+  const ms = Math.round(performance.now() - t0);
+
+  const answers = data && Array.isArray(data.Answer) ? data.Answer : [];
+  const ok = !!answers.find(a => a && a.type === 1 && typeof a.data === "string");
+
+  return { ok, ms };
+}
+
+async function testOneDomainDoH(dohUrl, domain, outerSignal){
+  const timesOk = [];
+  const timesAll = [];
+
+  for(let i=0;i<ATTEMPTS_PER_DOMAIN;i++){
+    if(outerSignal?.aborted) return { domain, ok:false, ms:null };
+
+    const r = await withTimeout(
+      (sig)=>dohResolveA(dohUrl, domain, sig),
+      PER_REQ_TIMEOUT_MS,
+      outerSignal
+    ).catch(()=>({ ok:false, ms: Math.round(PER_REQ_TIMEOUT_MS) }));
+
+    timesAll.push(r.ms);
+    if(r.ok) timesOk.push(r.ms);
+
+    // small jitter to reduce burst patterns on mobile networks
+    await new Promise(res=>setTimeout(res, 60 + Math.random()*90));
+  }
+
+  if(timesOk.length){
+    return { domain, ok:true, ms: median(timesOk) };
+  }
+  return { domain, ok:false, ms: median(timesAll) };
+}
+
+async function poolMap(items, worker, concurrency, signal){
+  const out = new Array(items.length);
+  let i = 0;
+
+  async function run(){
+    while(true){
+      const idx = i++;
+      if(idx >= items.length) return;
+      if(signal?.aborted) return;
+      out[idx] = await worker(items[idx], idx);
+    }
+  }
+
+  const runners = [];
+  for(let k=0;k<Math.min(concurrency, items.length); k++) runners.push(run());
+  await Promise.all(runners);
+  return out;
+}
+
+async function runForDnsInBrowser(inputValue, outerSignal){
+  // inputValue can be a known DNS IP (mapped to DoH) OR a direct DoH URL
+  const val = (inputValue || "").trim();
+  const dohUrl = isHttpUrl(val) ? val : (DOH_MAP[val] || null);
+
+  if(!dohUrl){
+    return { mode:"unsupported", error:"no_doh" };
+  }
+
+  // Mirrors server response structure: { groups:[...], dnsOk:boolean }
+  const GROUPS = [
+    { key:"xbox", title:"Xbox", domains:["xbox.com","account.xbox.com","login.live.com","xsts.auth.xboxlive.com"] },
+    { key:"playstation", title:"PlayStation", domains:["playstation.com","id.sonyentertainmentnetwork.com","auth.api.sonyentertainmentnetwork.com"] },
+    { key:"games", title:"Games", domains:["store.steampowered.com","epicgames.com","ea.com","battle.net"] },
+    { key:"international", title:"International", domains:["google.com","cloudflare.com","github.com","openai.com"] },
+    { key:"internal", title:"Internal", domains:["aparat.com","digikala.com","snapp.ir","divar.ir"] }
+  ];
+
+  const groups = [];
+  for(const g of GROUPS){
+    const items = await poolMap(
+      g.domains,
+      (d)=>testOneDomainDoH(dohUrl, d, outerSignal),
+      CONCURRENCY,
+      outerSignal
+    );
+
+    const okCount = items.filter(x=>x.ok).length;
+    const total = items.length;
+
+    groups.push({
+      key: g.key,
+      title: g.title,
+      total,
+      okCount,
+      // avgMs is what UI shows; we keep it numeric
+      avgMs: avgMs(items),
+      status: groupStatus(items),
+      items
+    });
+  }
+
+  return { mode:"doh", groups, dnsOk: !allFailed(groups) };
+}
+
+async function runHybridTest(primaryVal, secondaryVal, signal){
+  // 1) Try real user-IP DoH (best effort)
+  const primaryR = await runForDnsInBrowser(primaryVal, signal);
+
+  // If unsupported, fallback to server (less accurate) so user still gets something
+  let out = { ok:true, results:{ primary:null } };
+
+  if(primaryR.mode === "doh"){
+    out.results.primary = { groups: primaryR.groups, dnsOk: primaryR.dnsOk };
+  }else{
+    // Server fallback (Vercel) – keep UI, but warn
+    showError("⚠️ این DNS به‌صورت مستقیم داخل وب‌اپ قابل تست نیست (DNS کلاسیک). نتیجه با سرور محاسبه می‌شود و ممکن است با اینترنت شما متفاوت باشد. برای تست واقعی، یک DNS دارای DoH یا لینک DoH وارد کنید.");
+    const url = `/api/test?primary=${encodeURIComponent(primaryVal)}${secondaryVal ? `&secondary=${encodeURIComponent(secondaryVal)}` : ""}`;
+    const r = await fetch(url, { cache:"no-store", signal });
+    const j = await r.json();
+    return j;
+  }
+
+  if(secondaryVal){
+    const secondaryR = await runForDnsInBrowser(secondaryVal, signal);
+    if(secondaryR.mode === "doh"){
+      out.results.secondary = { groups: secondaryR.groups, dnsOk: secondaryR.dnsOk };
+    }else{
+      // Secondary unsupported → keep but warn; fall back to server for secondary too (still better than nothing)
+      showError("⚠️ Secondary DNS به‌صورت مستقیم داخل وب‌اپ قابل تست نیست. نتیجه Secondary از سرور محاسبه می‌شود و ممکن است با اینترنت شما متفاوت باشد.");
+      const url = `/api/test?primary=${encodeURIComponent(primaryVal)}&secondary=${encodeURIComponent(secondaryVal)}`;
+      const r = await fetch(url, { cache:"no-store", signal });
+      const j = await r.json();
+      return j;
+    }
+  }
+
+  return out;
+}
+// ====== End helpers ======
+
 btn.onclick = async ()=>{
   clearError();
   clearTimers();
@@ -943,12 +1010,12 @@ btn.onclick = async ()=>{
   const p = normalizeDigits(primary.value.trim());
   const s = normalizeDigits(secondary.value.trim());
 
-  if(!p || !looksLikeIp(p)){
-    showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8");
+  if(!p || (!looksLikeIp(p) && !isHttpUrl(p))){
+    showError("Primary معتبر نیست. نمونه: 8.8.8.8  (یا لینک DoH مثل https://dns.google/dns-query)");
     return;
   }
-  if(s && !looksLikeIp(s)){
-    showError("Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.");
+  if(s && (!looksLikeIp(s) && !isHttpUrl(s))){
+    showError("Secondary معتبر نیست. اگر نیاز ندارید، خالی بگذارید. (یا لینک DoH)");
     return;
   }
   if(s && s === p){
@@ -977,21 +1044,7 @@ btn.onclick = async ()=>{
     await new Promise(r=>setTimeout(r, 220));
     setLoaderText("در حال تست سرورهای داخلی هستیم…");
 
-    // اجرای تست‌ها از داخل مرورگر (از IP خود کاربر) با DoH
-    const primaryProv = providerFromIp(p);
-    const secondaryProv = s ? providerFromIp(s) : null;
-
-    const primaryRes = await runProviderTest(primaryProv, currentController.signal);
-    const secondaryRes = secondaryProv ? await runProviderTest(secondaryProv, currentController.signal) : null;
-
-    const j = {
-      ok: true,
-      results: {
-        primary: primaryRes,
-        secondary: secondaryRes
-      }
-    };
-
+    const j = await runHybridTest(p, s, currentController.signal);
 
     stop();
     bar.style.width = "100%";
@@ -1048,8 +1101,8 @@ btn.onclick = async ()=>{
     }
 
     hideLoader();
-    showError((e && e.message) ? e.message : "خطا در سرور");
-}
+    showError("خطا در سرور");
+  }
 
   setTimeout(()=>btn.disabled=false, 350);
 };
