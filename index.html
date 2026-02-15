@@ -490,11 +490,11 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       <div class="loaderBox">
         <div class="spinner" aria-hidden="true"></div>
         <div class="loaderTitle">تست DNS گیم رنتر</div>
-        <div class="loaderStep" id="loaderText">در حال آماده‌سازی هستیم…</div>
+        <div class="loaderStep" id="loaderText">یه لحظه صبر کن، داریم آماده می‌کنیم…</div>
 
         <div class="loaderExtra" id="loaderExtra">
-          <div class="loaderHint">لطفاً کمی صبور باشید…</div>
-          <button class="cancelBtn" id="cancelBtn" type="button">انصراف</button>
+          <div class="loaderHint">اگه طول کشید، می‌تونی لغوش کنی.</div>
+          <button class="cancelBtn" id="cancelBtn" type="button">لغو تست</button>
         </div>
       </div>
     </div>
@@ -504,7 +504,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       <div class="brandName">تست DNS گیم رنتر</div>
     </div>
 
-    <label>DNS را وارد کنید</label>
+    <label>DNS هاتو وارد کن</label>
     <div class="inputs">
       <div class="inputWrap">
         <input id="primary" inputmode="decimal" autocomplete="off"
@@ -520,7 +520,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 
     </div>
 
-    <button id="btn">شروع تست</button>
+    <button id="btn">بزن بریم برای تست</button>
 
     <div class="progress"><i id="bar"></i></div>
 
@@ -529,7 +529,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     <div class="grid" id="grid"></div>
 
     <div class="footer">
-      نتیجه‌ها بر اساس Resolve شدن دامنه‌های کلیدی هر سرویس است و ممکن است با اینترنت/منطقه فرق کند.
+      نتیجه‌ها تقریبیه و بسته به اینترنت یا منطقه‌ات ممکنه فرق داشته باشه.
     </div>
 
   </div>
@@ -597,19 +597,19 @@ function fakeProgress(){
 function friendlyError(apiError){
   switch(apiError){
     case "invalid_primary":
-      return "Primary DNS معتبر نیست. نمونه: 8.8.8.8";
+      return "Primary DNS درست نیست؛ مثلاً 8.8.8.8 بزن.";
     case "invalid_secondary":
-      return "Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.";
+      return "Secondary DNS درست نیست. اگه لازم نداری خالیش بذار.";
     case "private_primary":
-      return "Primary DNS خصوصی/لوکال است. بهتر است یک DNS عمومی وارد کنید.";
+      return "Primary DNS لوکاله؛ برای نتیجه بهتر یه DNS عمومی مثل 1.1.1.1 یا 8.8.8.8 هم امتحان کن.";
     case "private_secondary":
-      return "Secondary DNS خصوصی/لوکال است. اگر وارد می‌کنید، بهتر است عمومی باشد.";
+      return "Secondary DNS لوکاله؛ بهتره عمومی باشه تا مقایسه دقیق‌تر بشه.";
     case "same_dns":
-      return "Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.";
+      return "Primary و Secondary یکی هستن؛ یکی‌شون کافیه.";
     case "server_error":
-      return "یک مشکل سمت سرور پیش آمد. لطفاً دوباره امتحان کنید.";
+      return "سمت سرور یه مشکلی پیش اومد، دوباره امتحان کن.";
     default:
-      return "یک خطا رخ داد. لطفاً دوباره امتحان کنید.";
+      return "یه خطا پیش اومد، لطفاً دوباره امتحان کن.";
   }
 }
 
@@ -632,7 +632,7 @@ function buildCards(templateGroups){
         <div class="state">
           <div class="stateTop">
             <span class="light"></span>
-            <span id="state-${g.key}">آماده</span>
+            <span id="state-${g.key}">آماده‌ست</span>
           </div>
           <div class="badges">
             <span class="pill" id="p-${g.key}">Primary: -</span>
@@ -642,11 +642,11 @@ function buildCards(templateGroups){
       </div>
 
       <div class="actions">
-        <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات بیشتر</button>
+        <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات رو ببین</button>
       </div>
 
       <div class="details" id="details-${g.key}">
-        هنوز تست انجام نشده است.
+        هنوز تستی اجرا نشده.
       </div>
     </div>
   `).join("");
@@ -658,7 +658,7 @@ function buildCards(templateGroups){
       const open = b.getAttribute("data-open") === "1";
       if(open){
         box.classList.remove("expanded");
-        b.textContent = "جزئیات بیشتر";
+        b.textContent = "جزئیات رو ببین";
         b.setAttribute("data-open","0");
       } else {
         box.classList.add("expanded");
@@ -680,10 +680,10 @@ function setAllTesting(){
 
   for(const k of GROUP_ORDER){
     const st = document.getElementById(`state-${k}`);
-    if(st) st.textContent = "در حال تست…";
+    if(st) st.textContent = "داریم تست می‌کنیم…";
     const p = document.getElementById(`p-${k}`); if(p) p.textContent = "Primary: …";
     const s = document.getElementById(`s-${k}`); if(s) s.textContent = "Secondary: …";
-    const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال دریافت نتیجه…";
+    const d = document.getElementById(`details-${k}`); if(d) d.textContent = "نتیجه‌ها تو راهه…";
   }
 }
 
@@ -776,7 +776,7 @@ function cancelRequest(reason){
   buildCards(templates);
 })();
 
-cancelBtn.onclick = ()=> cancelRequest("تست متوقف شد.");
+cancelBtn.onclick = ()=> cancelRequest("تست رو متوقف کردیم.");
 
 btn.onclick = async ()=>{
   clearError();
@@ -786,21 +786,21 @@ btn.onclick = async ()=>{
   const s = normalizeDigits(secondary.value.trim());
 
   if(!p || !looksLikeIp(p)){
-    showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8");
+    showError("Primary DNS درست نیست؛ مثلاً 8.8.8.8 بزن.");
     return;
   }
   if(s && !looksLikeIp(s)){
-    showError("Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.");
+    showError("Secondary DNS درست نیست. اگه لازم نداری خالیش بذار.");
     return;
   }
   if(s && s === p){
-    showError("Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.");
+    showError("Primary و Secondary یکی هستن؛ یکی‌شون کافیه.");
     return;
   }
 
   btn.disabled = true;
   setAllTesting();
-  showLoader("در حال آماده‌سازی هستیم…");
+  showLoader("یه لحظه صبر کن، داریم آماده می‌کنیم…");
 
   softTimeoutId = setTimeout(()=> loaderExtra.classList.add("show"), 20000);
   hardTimeoutId = setTimeout(()=> cancelRequest("خطا در سرور"), 120000);
@@ -809,15 +809,15 @@ btn.onclick = async ()=>{
   currentController = new AbortController();
 
   try{
-    setLoaderText("در حال تست سرورهای Xbox هستیم…");
+    setLoaderText("داریم سرورهای Xbox رو تست می‌کنیم…");
     await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرورهای PlayStation هستیم…");
+    setLoaderText("داریم سرورهای PlayStation رو تست می‌کنیم…");
     await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرور بازی‌های پرطرفدار هستیم…");
+    setLoaderText("داریم سرور بازی‌های محبوب رو تست می‌کنیم…");
     await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرورهای بین‌المللی هستیم…");
+    setLoaderText("داریم سرورهای بین‌المللی رو تست می‌کنیم…");
     await new Promise(r=>setTimeout(r, 220));
-    setLoaderText("در حال تست سرورهای داخلی هستیم…");
+    setLoaderText("داریم سرورهای داخلی رو تست می‌کنیم…");
 
     const url = `/api/test?primary=${encodeURIComponent(p)}${s ? `&secondary=${encodeURIComponent(s)}` : ""}`;
     const r = await fetch(url, { cache:"no-store", signal: currentController.signal });
@@ -841,14 +841,14 @@ btn.onclick = async ()=>{
 
     if(!primaryOk && !secondaryOk){
       hideLoader();
-      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
+      showError("این DNS یا آنلاین نیست یا درست جواب نمی‌ده.");
       btn.disabled = false;
       return;
     }
 
     // اگر فقط یکی مشکل داشت، پیام رو نمایش می‌دیم ولی نتیجه‌ها هم میاد
     if(!primaryOk || (j.results?.secondary && !secondaryOk)){
-      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
+      showError("این DNS یا آنلاین نیست یا درست جواب نمی‌ده.");
     }
 
     const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
@@ -861,7 +861,7 @@ btn.onclick = async ()=>{
       await new Promise(r=>setTimeout(r, 120));
     }
 
-    setLoaderText("تست کامل شد ✅");
+    setLoaderText("تمومه! تست کامل شد ✅");
     await new Promise(r=>setTimeout(r, 220));
     hideLoader();
 
@@ -872,13 +872,13 @@ btn.onclick = async ()=>{
 
     if(e && e.name === "AbortError"){
       hideLoader();
-      showError("تست متوقف شد.");
+      showError("تست رو متوقف کردیم.");
       btn.disabled = false;
       return;
     }
 
     hideLoader();
-    showError("خطا در سرور");
+    showError("سرور خطا داد؛ یه بار دیگه امتحان کن.");
   }
 
   setTimeout(()=>btn.disabled=false, 350);

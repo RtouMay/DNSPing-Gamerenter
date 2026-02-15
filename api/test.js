@@ -29,17 +29,6 @@ function isValidIPv4(ip) {
   });
 }
 
-// حداقلِ امن: بلاک کردن رنج‌های خصوصی/لوکال
-function isPrivateIPv4(ip) {
-  const [a,b] = ip.split(".").map(Number);
-  if (a === 10) return true;
-  if (a === 127) return true;
-  if (a === 0) return true;
-  if (a === 192 && b === 168) return true;
-  if (a === 172 && b >= 16 && b <= 31) return true;
-  return false;
-}
-
 // ----------------- Timing & timeout -----------------
 function nowMs() {
   // Date.now برای سادگی و سازگاری
@@ -240,11 +229,8 @@ export default async function handler(req, res) {
 
     // Validate
     if (!primary || !isValidIPv4(primary)) return json(res, 400, { ok:false, error:"invalid_primary" });
-    if (isPrivateIPv4(primary)) return json(res, 400, { ok:false, error:"private_primary" });
-
     if (secondary) {
       if (!isValidIPv4(secondary)) return json(res, 400, { ok:false, error:"invalid_secondary" });
-      if (isPrivateIPv4(secondary)) return json(res, 400, { ok:false, error:"private_secondary" });
       if (secondary === primary) return json(res, 400, { ok:false, error:"same_dns" });
     }
 
