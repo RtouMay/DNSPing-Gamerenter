@@ -687,19 +687,30 @@ function setAllTesting(){
   }
 }
 
-function renderDnsBlock(label, g){
+function dnsFailureText(g, requested, meta){
+  if(!requested) return "وارد نشده";
+  if(meta?.budgetHit) return "تست کامل نشد (محدودیت زمان سرور)";
+  if(!g) return "این DNS جواب نداد";
+  if(g.tested === 0) return "هیچ پاسخی از DNS نگرفتیم";
+  if(g.okCount === 0) return "دامنه‌ها Resolve نشدن";
+  return "";
+}
+
+function renderDnsBlock(label, g, requested, meta){
+  const failText = dnsFailureText(g, requested, meta);
+
   if(!g){
     return `
       <div class="dBlock">
         <div class="dTitle">
           <span>${label}</span>
-          <span class="dMeta">وارد نشده</span>
+          <span class="dMeta">${failText}</span>
         </div>
       </div>
     `;
   }
 
-  const meta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
+  const blockMeta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
   const items = (g.items || []).map(it=>{
     const tagCls = it.ok ? "ok" : "fail";
     const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
@@ -716,14 +727,22 @@ function renderDnsBlock(label, g){
     <div class="dBlock">
       <div class="dTitle">
         <span>${label}</span>
-        <span class="dMeta">${meta}</span>
+        <span class="dMeta">${blockMeta}</span>
       </div>
       ${items}
     </div>
   `;
 }
 
-function renderGroup(key, gp, gs){
+function dnsPillText(label, g, requested){
+  if(!requested) return `${label}: وارد نشده`;
+  if(!g) return `${label}: جواب نداد`;
+  if(g.okCount === 0) return `${label}: مشکل‌دار`;
+  return `${label}: ${g.avgMs == null ? "-" : g.avgMs + "ms"}`;
+}
+
+function renderGroup(key, gp, gs, opts = {}){
+  const { hasSecondary = false, primaryMeta = null, secondaryMeta = null } = opts;
   const box = document.getElementById(`box-${key}`);
   const stateEl = document.getElementById(`state-${key}`);
   const pEl = document.getElementById(`p-${key}`);
@@ -737,12 +756,12 @@ function renderGroup(key, gp, gs){
 
   stateEl.textContent = overallOk ? "قابل استفاده ✅" : "مشکل دارد ❌";
 
-  pEl.textContent = gp ? `Primary: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "Primary: -";
-  sEl.textContent = gs ? `Secondary: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : "Secondary: -";
+  pEl.textContent = dnsPillText("Primary", gp, true);
+  sEl.textContent = dnsPillText("Secondary", gs, hasSecondary);
 
   details.innerHTML = `
-    ${renderDnsBlock("Primary DNS", gp)}
-    ${renderDnsBlock("Secondary DNS", gs)}
+    ${renderDnsBlock("Primary DNS", gp, true, primaryMeta)}
+    ${renderDnsBlock("Secondary DNS", gs, hasSecondary, secondaryMeta)}
   `;
 }
 
@@ -851,13 +870,19 @@ btn.onclick = async ()=>{
       showError("این DNS یا آنلاین نیست یا درست جواب نمی‌ده.");
     }
 
-    const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
-    const secondaryGroups = Object.fromEntries((j.results?.secondary?.groups || []).map(g=>[g.key, g]));
+    const primaryResult = j.results?.primary || {};
+    const secondaryResult = j.results?.secondary || {};
+    const primaryGroups = Object.fromEntries((primaryResult.groups || []).map(g=>[g.key, g]));
+    const secondaryGroups = Object.fromEntries((secondaryResult.groups || []).map(g=>[g.key, g]));
 
     for(const key of GROUP_ORDER){
       const gp = primaryGroups[key] || null;
       const gs = (j.results?.secondary ? (secondaryGroups[key] || null) : null);
-      renderGroup(key, gp, gs);
+      renderGroup(key, gp, gs, {
+        hasSecondary: Boolean(s),
+        primaryMeta: primaryResult.meta || null,
+        secondaryMeta: secondaryResult.meta || null,
+      });
       await new Promise(r=>setTimeout(r, 120));
     }
 
