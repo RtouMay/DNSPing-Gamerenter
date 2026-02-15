@@ -845,7 +845,6 @@ function setAllTesting(){
 
 function dnsFailureText(g, requested, meta){
   if(requested === false) return "وارد نشده";
-  if(meta?.budgetHit) return "تست کامل نشد (محدودیت زمان سرور)";
   if(!g) return "این DNS جواب نداد";
   if(g.tested === 0) return "هیچ پاسخی از DNS نگرفتیم";
   if(g.okCount === 0) return "دامنه‌ها Resolve نشدن";
@@ -869,7 +868,7 @@ function renderDnsBlock(label, g, requested, meta){
   const blockMeta = failText || `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
   const items = (g.items || []).map(it=>{
     const tagCls = it.ok ? "ok" : "fail";
-    const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
+    const tagTxt = it.ok ? (`Ping: ${it.ms}ms`) : "Fail";
     const shown = shortenDomain(it.domain);
     return `
       <div class="dItem">
@@ -894,7 +893,7 @@ function dnsPillText(label, g, requested){
   if(requested === false) return `${label}: وارد نشده`;
   if(!g) return `${label}: جواب نداد`;
   if(g.okCount === 0) return `${label}: مشکل‌دار`;
-  return `${label}: ${g.avgMs == null ? "-" : g.avgMs + "ms"}`;
+  return `${label}: ${g.avgMs == null ? "-" : `Ping ${g.avgMs}ms`}`;
 }
 
 function renderGroup(key, gp, gs, opts = {}){
@@ -1073,8 +1072,6 @@ btn.onclick = async ()=>{
   showLoader("یه لحظه صبر کن، داریم آماده می‌کنیم…");
 
   softTimeoutId = setTimeout(()=> loaderExtra.classList.add("show"), 20000);
-  hardTimeoutId = setTimeout(()=> cancelRequest("خطا در سرور"), 120000);
-
   const stop = fakeProgress();
   currentController = new AbortController();
 
