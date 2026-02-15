@@ -858,14 +858,7 @@ btn.onclick = async ()=>{
     const primaryOk = j.results?.primary?.dnsOk !== false;
     const secondaryOk = j.results?.secondary ? (j.results.secondary.dnsOk !== false) : true;
 
-    if(!primaryOk && !secondaryOk){
-      hideLoader();
-      showError("این DNS یا آنلاین نیست یا درست جواب نمی‌ده.");
-      btn.disabled = false;
-      return;
-    }
-
-    // اگر فقط یکی مشکل داشت، پیام رو نمایش می‌دیم ولی نتیجه‌ها هم میاد
+    // حتی اگر هر دو DNS مشکل داشته باشن هم نتیجه کارت‌ها رو رندر می‌کنیم
     if(!primaryOk || (j.results?.secondary && !secondaryOk)){
       showError("این DNS یا آنلاین نیست یا درست جواب نمی‌ده.");
     }
