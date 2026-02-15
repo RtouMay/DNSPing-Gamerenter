@@ -731,10 +731,10 @@ function setAllTesting(){
 
 function dnsFailureText(g, requested, meta){
   if(requested === false) return "وارد نشده";
-  if(meta?.budgetHit) return "تست کامل نشد (محدودیت زمان سرور)";
-  if(!g) return "این DNS جواب نداد";
-  if(g.tested === 0) return "هیچ پاسخی از DNS نگرفتیم";
-  if(g.okCount === 0) return "دامنه‌ها Resolve نشدن";
+  if(meta?.budgetHit) return "FAIL";
+  if(!g) return "FAIL";
+  if(g.tested === 0) return "FAIL";
+  if(g.okCount === 0) return "FAIL";
   return "";
 }
 
@@ -778,8 +778,8 @@ function renderDnsBlock(label, g, requested, meta){
 
 function dnsPillText(label, g, requested){
   if(requested === false) return `${label}: وارد نشده`;
-  if(!g) return `${label}: جواب نداد`;
-  if(g.okCount === 0) return `${label}: مشکل‌دار`;
+  if(!g) return `${label}: FAIL`;
+  if(g.okCount === 0) return `${label}: FAIL`;
   return `${label}: ${g.avgMs == null ? "-" : g.avgMs + "ms"}`;
 }
 
