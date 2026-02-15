@@ -241,12 +241,27 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true, cached: true, ...cached });
     }
 
-    // Abort controller for budget
-    const ac = new AbortController();
-    const signal = ac.signal;
-    const budgetTimer = setTimeout(() => ac.abort(), DNS_BUDGET_MS);
+    function emptyGroupResult(group, reason) {
+      return {
+        key: group.key,
+        title: group.title,
+        total: group.domains.length,
+        tested: 0,
+        okCount: 0,
+        avgMs: null,
+        status: "fail",
+        sampling: {
+          enabled: group.domains.length > 5,
+          decision: reason,
+          initialCount: Math.min(samplingCfg.initialCount, group.domains.length),
+          maxCount: Math.min(samplingCfg.maxCount, group.domains.length),
+          skipped: group.domains.length,
+        },
+        items: []
+      };
+    }
 
-    async function runGroupAdaptive(resolver, group) {
+    async function runGroupAdaptive(resolver, group, signal) {
       const domains = group.domains;
       const isSmall = domains.length <= 5;
       const maxCount = isSmall ? domains.length : Math.min(samplingCfg.maxCount, domains.length);
@@ -327,38 +342,47 @@ export default async function handler(req, res) {
       const resolver = new Resolver();
       resolver.setServers([serverIp]);
 
-      // Warmup سبک (کمک به پایداری نتیجه و بعضاً سرعت)
-      // اگر budget اجازه داد
-      await resolveOnce(resolver, "cloudflare.com", Math.min(900, PER_DOMAIN_TIMEOUT_MS), signal);
+      // هر DNS بودجه مستقل خودش را دارد تا Primary خراب، Secondary را حذف نکند
+      const ac = new AbortController();
+      const signal = ac.signal;
+      const budgetTimer = setTimeout(() => ac.abort(), DNS_BUDGET_MS);
 
-      const groups = [];
-      for (const g of GROUPS) {
-        if (signal.aborted) break;
-        groups.push(await runGroupAdaptive(resolver, g));
-      }
+      try {
+        // Warmup سبک
+        await resolveOnce(resolver, "cloudflare.com", Math.min(900, PER_DOMAIN_TIMEOUT_MS), signal);
 
-      return {
-        groups,
-        dnsOk: !allFailed(groups),
-        meta: {
-          mode,
-          concurrency: CONCURRENCY,
-          perDomainTimeoutMs: PER_DOMAIN_TIMEOUT_MS,
-          budgetMs: DNS_BUDGET_MS,
-          budgetHit: signal.aborted
+        const groups = [];
+        for (const g of GROUPS) {
+          if (signal.aborted) {
+            groups.push(emptyGroupResult(g, "budget_aborted_before_group"));
+            continue;
+          }
+          groups.push(await runGroupAdaptive(resolver, g, signal));
         }
-      };
+
+        return {
+          groups,
+          dnsOk: !allFailed(groups),
+          meta: {
+            mode,
+            concurrency: CONCURRENCY,
+            perDomainTimeoutMs: PER_DOMAIN_TIMEOUT_MS,
+            budgetMs: DNS_BUDGET_MS,
+            budgetHit: signal.aborted
+          }
+        };
+      } finally {
+        clearTimeout(budgetTimer);
+      }
     }
 
     const primaryResult = await runForDns(primary);
     const out = { ok:true, results: { primary: primaryResult } };
 
-    if (secondary && !signal.aborted) {
+    if (secondary) {
       const secondaryResult = await runForDns(secondary);
       out.results.secondary = secondaryResult;
     }
-
-    clearTimeout(budgetTimer);
 
     // cache response (بدون داده‌های غیرضروری)
     cacheSet(cacheKey, out);
