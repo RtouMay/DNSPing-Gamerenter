@@ -118,32 +118,6 @@ async function mapWithConcurrency(items, limit, mapper, signal) {
   return results;
 }
 
-// ----------------- Adaptive sampling logic -----------------
-function decideSampling(domains, firstResults, cfg) {
-  const tested = firstResults.length;
-  const okCount = firstResults.filter(x => x.ok).length;
-  const avg = avgMs(firstResults);
-
-  // خیلی خوب: همه ok و avg کم
-  const veryGood = (okCount === tested) && (avg !== null) && (avg <= cfg.goodAvgMsThreshold);
-
-  // خیلی بد: تقریباً همه fail یا timeout
-  const failCount = tested - okCount;
-  const veryBad = (okCount === 0) || (failCount >= cfg.badFailThreshold);
-
-  if (domains.length <= cfg.maxCount) {
-    return { action: "continue", targetCount: domains.length, reason: "small_group" };
-  }
-
-  if (tested >= cfg.initialCount) {
-    if (veryGood) return { action: "stop", targetCount: tested, reason: "very_good_sample" };
-    if (veryBad) return { action: "stop", targetCount: tested, reason: "very_bad_sample" };
-    return { action: "continue", targetCount: cfg.maxCount, reason: "uncertain_sample" };
-  }
-
-  return { action: "continue", targetCount: Math.min(cfg.maxCount, domains.length), reason: "default" };
-}
-
 // ----------------- Groups -----------------
 const GROUPS = [
   {
@@ -226,26 +200,11 @@ export default async function handler(req, res) {
     const userConc = Number(normalizeDigits(u.searchParams.get("conc") || "8"));
     const CONCURRENCY = Number.isFinite(userConc) ? Math.max(1, Math.min(12, Math.floor(userConc))) : 8;
 
-    // mode: fast / full (اختیاری)
-    // fast = همان adaptive + budget (پیشفرض)
-    // full = سقف نمونه‌گیری بالاتر و budget بیشتر
-    const mode = (u.searchParams.get("mode") || "fast").toLowerCase();
-    const isFull = mode === "full";
+    // mode: برای سازگاری با کلاینت نگه داشته شده است
+    const mode = (u.searchParams.get("mode") || "full").toLowerCase();
 
-    // پر-دامنه تایم‌اوت: پیشفرض 1600ms (خیلی سریع‌تر از 3500) ولی با منطق توقف زودهنگام
-    // اگر full باشد کمی بالاتر
-    const PER_DOMAIN_TIMEOUT_MS = isFull ? 2400 : 1600;
-
-    // سقف زمانی کل برای هر DNS
-    const DNS_BUDGET_MS = isFull ? 12_000 : 6_000;
-
-    // Sampling tuning
-    const samplingCfg = {
-      initialCount: 3,
-      maxCount: isFull ? 12 : 8,
-      goodAvgMsThreshold: 120,
-      badFailThreshold: 2, // اگر تو sample حداقل 2 fail داشتیم => خیلی بد
-    };
+    // پر-دامنه تایم‌اوت (برای جلوگیری از آویزان شدن یک دامنه خاص)
+    const PER_DOMAIN_TIMEOUT_MS = 2400;
 
     // Validate
     if (!primary || !isValidIPv4(primary)) return json(res, 400, { ok:false, error:"invalid_primary" });
@@ -261,81 +220,17 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true, cached: true, ...cached });
     }
 
-    function emptyGroupResult(group, reason) {
-      return {
-        key: group.key,
-        title: group.title,
-        total: group.domains.length,
-        tested: 0,
-        okCount: 0,
-        avgMs: null,
-        status: "fail",
-        sampling: {
-          enabled: group.domains.length > 5,
-          decision: reason,
-          initialCount: Math.min(samplingCfg.initialCount, group.domains.length),
-          maxCount: Math.min(samplingCfg.maxCount, group.domains.length),
-          skipped: group.domains.length,
-        },
-        items: []
-      };
-    }
-
     async function runGroupAdaptive(resolver, group, signal) {
       const domains = group.domains;
-      const isSmall = domains.length <= 5;
-      const maxCount = isSmall ? domains.length : Math.min(samplingCfg.maxCount, domains.length);
+      const maxCount = domains.length;
+      const initialCount = Math.min(3, maxCount);
 
-      const initialCount = Math.min(samplingCfg.initialCount, maxCount);
-
-      // sample batch
-      const firstBatch = domains.slice(0, initialCount);
-      const firstResults = await mapWithConcurrency(
-        firstBatch,
+      const testedResults = await mapWithConcurrency(
+        domains,
         CONCURRENCY,
         (d) => resolveOnce(resolver, d, PER_DOMAIN_TIMEOUT_MS, signal),
         signal
       );
-
-      // اگر budget خورد یا abort شد، همین رو برگردون
-      if (signal.aborted) {
-        const okCount = firstResults.filter(x=>x.ok).length;
-        return {
-          key: group.key,
-          title: group.title,
-          total: domains.length,
-          tested: firstResults.length,
-          okCount,
-          avgMs: avgMs(firstResults),
-          status: groupStatus(firstResults),
-          sampling: { enabled: !isSmall, decision: "budget_aborted", initialCount, maxCount, skipped: Math.max(0, domains.length-firstResults.length) },
-          items: firstResults
-        };
-      }
-
-      const decision = decideSampling(domains, firstResults, {
-        initialCount,
-        maxCount,
-        goodAvgMsThreshold: samplingCfg.goodAvgMsThreshold,
-        badFailThreshold: samplingCfg.badFailThreshold,
-      });
-
-      let testedResults = firstResults;
-
-      if (decision.action === "continue") {
-        const targetCount = decision.targetCount;
-        const remaining = domains.slice(firstResults.length, targetCount);
-
-        if (remaining.length) {
-          const moreResults = await mapWithConcurrency(
-            remaining,
-            CONCURRENCY,
-            (d) => resolveOnce(resolver, d, PER_DOMAIN_TIMEOUT_MS, signal),
-            signal
-          );
-          testedResults = testedResults.concat(moreResults);
-        }
-      }
 
       const okCount = testedResults.filter(x=>x.ok).length;
 
@@ -348,8 +243,8 @@ export default async function handler(req, res) {
         avgMs: avgMs(testedResults),
         status: groupStatus(testedResults),
         sampling: {
-          enabled: !isSmall,
-          decision: decision.reason,
+          enabled: false,
+          decision: "full_scan",
           initialCount,
           maxCount,
           skipped: Math.max(0, domains.length - testedResults.length),
@@ -362,38 +257,27 @@ export default async function handler(req, res) {
       const resolver = new Resolver();
       resolver.setServers([serverIp]);
 
-      // هر DNS بودجه مستقل خودش را دارد تا Primary خراب، Secondary را حذف نکند
-      const ac = new AbortController();
-      const signal = ac.signal;
-      const budgetTimer = setTimeout(() => ac.abort(), DNS_BUDGET_MS);
+      const signal = null;
 
-      try {
-        // Warmup سبک
-        await resolveOnce(resolver, "cloudflare.com", Math.min(900, PER_DOMAIN_TIMEOUT_MS), signal);
+      // Warmup سبک
+      await resolveOnce(resolver, "cloudflare.com", Math.min(900, PER_DOMAIN_TIMEOUT_MS), signal);
 
-        const groups = [];
-        for (const g of GROUPS) {
-          if (signal.aborted) {
-            groups.push(emptyGroupResult(g, "budget_aborted_before_group"));
-            continue;
-          }
-          groups.push(await runGroupAdaptive(resolver, g, signal));
-        }
-
-        return {
-          groups,
-          dnsOk: !allFailed(groups),
-          meta: {
-            mode,
-            concurrency: CONCURRENCY,
-            perDomainTimeoutMs: PER_DOMAIN_TIMEOUT_MS,
-            budgetMs: DNS_BUDGET_MS,
-            budgetHit: signal.aborted
-          }
-        };
-      } finally {
-        clearTimeout(budgetTimer);
+      const groups = [];
+      for (const g of GROUPS) {
+        groups.push(await runGroupAdaptive(resolver, g, signal));
       }
+
+      return {
+        groups,
+        dnsOk: !allFailed(groups),
+        meta: {
+          mode,
+          concurrency: CONCURRENCY,
+          perDomainTimeoutMs: PER_DOMAIN_TIMEOUT_MS,
+          budgetMs: null,
+          budgetHit: false
+        }
+      };
     }
 
     const primaryResult = await runForDns(primary);
