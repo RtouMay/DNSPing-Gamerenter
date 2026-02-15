@@ -710,7 +710,7 @@ function renderDnsBlock(label, g, requested, meta){
     `;
   }
 
-  const blockMeta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
+  const blockMeta = failText || `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
   const items = (g.items || []).map(it=>{
     const tagCls = it.ok ? "ok" : "fail";
     const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
@@ -742,7 +742,8 @@ function dnsPillText(label, g, requested){
 }
 
 function renderGroup(key, gp, gs, opts = {}){
-  const { hasSecondary = false, primaryMeta = null, secondaryMeta = null } = opts;
+  const inferredSecondary = Boolean(normalizeDigits(secondary?.value?.trim?.() || ""));
+  const { hasSecondary = inferredSecondary, primaryMeta = null, secondaryMeta = null } = opts;
   const box = document.getElementById(`box-${key}`);
   const stateEl = document.getElementById(`state-${key}`);
   const pEl = document.getElementById(`p-${key}`);
