@@ -688,7 +688,7 @@ function setAllTesting(){
 }
 
 function dnsFailureText(g, requested, meta){
-  if(!requested) return "وارد نشده";
+  if(requested === false) return "وارد نشده";
   if(meta?.budgetHit) return "تست کامل نشد (محدودیت زمان سرور)";
   if(!g) return "این DNS جواب نداد";
   if(g.tested === 0) return "هیچ پاسخی از DNS نگرفتیم";
@@ -735,7 +735,7 @@ function renderDnsBlock(label, g, requested, meta){
 }
 
 function dnsPillText(label, g, requested){
-  if(!requested) return `${label}: وارد نشده`;
+  if(requested === false) return `${label}: وارد نشده`;
   if(!g) return `${label}: جواب نداد`;
   if(g.okCount === 0) return `${label}: مشکل‌دار`;
   return `${label}: ${g.avgMs == null ? "-" : g.avgMs + "ms"}`;
