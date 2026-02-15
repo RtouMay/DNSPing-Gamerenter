@@ -511,30 +511,40 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 }
 .homeSliderTrack{
   display:flex;
-  transition:transform .45s cubic-bezier(.2,.8,.2,1);
+  transition:transform .6s cubic-bezier(.22,.86,.32,1);
   will-change:transform;
 }
 .homeSlide{
   min-width:100%;
   height:180px;
   position:relative;
-  background:linear-gradient(130deg, rgba(18,24,43,.98), rgba(10,15,30,.98));
-}
-.homeSlide img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
+  padding:16px;
+  display:flex;
+  align-items:flex-end;
+  background:
+    radial-gradient(140% 110% at 12% 20%, rgba(225,29,72,.24), transparent 62%),
+    radial-gradient(120% 100% at 88% 10%, rgba(59,130,246,.18), transparent 55%),
+    linear-gradient(130deg, rgba(18,24,43,.98), rgba(10,15,30,.98));
+  overflow:hidden;
 }
 .homeSlideOverlay{
-  position:absolute;
-  inset:auto 0 0 0;
-  padding:10px;
-  background:linear-gradient(180deg, rgba(7,10,18,.02), rgba(7,10,18,.78));
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(251,113,133,.24);
+  background:linear-gradient(180deg, rgba(7,10,18,.22), rgba(7,10,18,.72));
+  box-shadow: 0 18px 45px rgba(0,0,0,.30);
+  backdrop-filter: blur(4px);
   display:flex;
   justify-content:space-between;
   align-items:flex-end;
   gap:8px;
+  transform:translateY(0);
+  animation: slideFloat 4.5s ease-in-out infinite;
+}
+@keyframes slideFloat{
+  0%,100%{ transform:translateY(0); }
+  50%{ transform:translateY(-3px); }
 }
 .homeSlideMeta{
   display:flex;
@@ -551,14 +561,16 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 }
 .homeSlideGo{
   font-size:11px;
-  padding:5px 8px;
+  padding:6px 10px;
   border-radius:999px;
   border:1px solid rgba(251,113,133,.45);
   color:#fecdd3;
-  background:rgba(7,10,18,.55);
+  background:rgba(7,10,18,.8);
   text-decoration:none;
   white-space:nowrap;
+  transition:.2s;
 }
+.homeSlideGo:hover{ border-color:rgba(251,113,133,.85); transform:translateY(-1px); }
 
 .homeNavBtn{
   position:absolute;
@@ -573,10 +585,13 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   cursor:pointer;
   display:grid;
   place-items:center;
+  z-index:2;
+  font-size:18px;
+  font-weight:700;
 }
-.homeNavBtn.prev{ right:8px; }
-.homeNavBtn.next{ left:8px; }
-.homeNavBtn:hover{ border-color:rgba(225,29,72,.55); }
+.homeNavBtn.prev{ left:8px; }
+.homeNavBtn.next{ right:8px; }
+.homeNavBtn:hover{ border-color:rgba(225,29,72,.55); box-shadow:0 0 0 3px rgba(225,29,72,.10); }
 
 .homeDots{
   margin-top:8px;
@@ -663,8 +678,8 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       </div>
       <div class="homeSliderShell" id="homeSliderShell" aria-live="polite">
         <div class="homeSliderTrack" id="homeSliderTrack"></div>
-        <button class="homeNavBtn prev" id="homePrev" type="button" aria-label="اسلاید قبلی">❯</button>
-        <button class="homeNavBtn next" id="homeNext" type="button" aria-label="اسلاید بعدی">❮</button>
+        <button class="homeNavBtn prev" id="homePrev" type="button" aria-label="اسلاید قبلی">‹</button>
+        <button class="homeNavBtn next" id="homeNext" type="button" aria-label="اسلاید بعدی">›</button>
       </div>
       <div class="homeDots" id="homeDots"></div>
       <iframe
@@ -940,10 +955,17 @@ function cancelRequest(reason){
   btn.disabled = false;
 }
 
-const defaultHomeSlides = [
-  { title:"صفحه اصلی گیم‌رنتر", subtitle:"مشاهده جدیدترین اسلایدرها", image:"logo.png", link:"https://gamerenter.ir/" },
-  { title:"پیشنهادهای ویژه", subtitle:"دسترسی سریع به بنرهای اصلی سایت", image:"logo.png", link:"https://gamerenter.ir/" },
-  { title:"کمپین‌ها و جشنواره‌ها", subtitle:"برای دیدن همه اسلایدرها وارد سایت شوید", image:"logo.png", link:"https://gamerenter.ir/" }
+const featuredHomeSlides = [
+  {
+    title:"پیشنهادهای ویژه گیم‌رنتر",
+    subtitle:"مشاهده دسته‌بندی تخفیف‌ها و فروش‌های خاص",
+    link:"https://gamerenter.ir/category/special-sales"
+  },
+  {
+    title:"معرفی Xbox Game Pass",
+    subtitle:"راهنمای کامل پلن‌های Ultimate, Essential و Premium",
+    link:"https://gamerenter.ir/xbox-game-pass-ultimate-essential-premium-introduction"
+  }
 ];
 
 let homeSliderState = { index: 0, timer: null, total: 0 };
@@ -957,18 +979,18 @@ function sanitizeText(v){
 }
 
 function renderHomeSlides(slides){
-  const safeSlides = (Array.isArray(slides) && slides.length ? slides : defaultHomeSlides).slice(0, 8);
+  const baseSlides = Array.isArray(slides) && slides.length ? slides : featuredHomeSlides;
+  const safeSlides = [...baseSlides, ...baseSlides].slice(0, 8);
   homeSliderState.total = safeSlides.length;
 
   homeSliderTrack.innerHTML = safeSlides.map((slide, idx) => `
     <article class="homeSlide" data-index="${idx}">
-      <img src="${sanitizeText(slide.image || 'logo.png')}" alt="${sanitizeText(slide.title || 'اسلایدر گیم‌رنتر')}" loading="lazy">
       <div class="homeSlideOverlay">
         <div class="homeSlideMeta">
-          <div class="homeSlideTitle">${sanitizeText(slide.title || 'اسلایدر گیم‌رنتر')}</div>
-          <div class="homeSlideSub">${sanitizeText(slide.subtitle || 'اسلایدر صفحه اصلی')}</div>
+          <div class="homeSlideTitle">${sanitizeText(slide.title || 'لینک ویژه گیم‌رنتر')}</div>
+          <div class="homeSlideSub">${sanitizeText(slide.subtitle || 'برای مشاهده جزئیات کلیک کنید')}</div>
         </div>
-        <a class="homeSlideGo" href="${sanitizeText(slide.link || 'https://gamerenter.ir/')}" target="_blank" rel="noopener noreferrer">مشاهده</a>
+        <a class="homeSlideGo" href="${sanitizeText(slide.link || 'https://gamerenter.ir/')}" target="_blank" rel="noopener noreferrer">ورود</a>
       </div>
     </article>
   `).join('');
@@ -996,7 +1018,10 @@ function restartHomeAutoPlay(){
 }
 
 async function setupHomeSlider(){
-  renderHomeSlides(defaultHomeSlides);
+  renderHomeSlides(featuredHomeSlides);
+  homeFallback.style.display = 'none';
+  homeSliderShell.style.display = 'block';
+  homeDots.style.display = 'flex';
   restartHomeAutoPlay();
 
   try{
@@ -1011,11 +1036,6 @@ async function setupHomeSlider(){
       return;
     }
   }catch(e){}
-
-  // fallback: اگر گرفتن اسلایدرها ممکن نبود، آی‌فریم سایت اصلی نمایش داده شود.
-  homeSliderShell.style.display = 'none';
-  homeDots.style.display = 'none';
-  homeFallback.style.display = 'block';
 }
 
 homePrev?.addEventListener('click', ()=>{ moveHomeSlide(-1); restartHomeAutoPlay(); });
