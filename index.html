@@ -486,6 +486,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   border-radius:16px;
   background:rgba(11,16,34,.86);
   padding:10px;
+  overflow:hidden;
 }
 .homeSliderHead{
   display:flex;
@@ -500,12 +501,111 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   text-decoration:none;
 }
 .homeSliderHead a:hover{ text-decoration:underline; }
-.homeSliderFrame{
+
+.homeSliderShell{
+  position:relative;
+  border:1px solid rgba(27,36,68,.9);
+  border-radius:12px;
+  background:#080d1a;
+  overflow:hidden;
+}
+.homeSliderTrack{
+  display:flex;
+  transition:transform .45s cubic-bezier(.2,.8,.2,1);
+  will-change:transform;
+}
+.homeSlide{
+  min-width:100%;
+  height:180px;
+  position:relative;
+  background:linear-gradient(130deg, rgba(18,24,43,.98), rgba(10,15,30,.98));
+}
+.homeSlide img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.homeSlideOverlay{
+  position:absolute;
+  inset:auto 0 0 0;
+  padding:10px;
+  background:linear-gradient(180deg, rgba(7,10,18,.02), rgba(7,10,18,.78));
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:8px;
+}
+.homeSlideMeta{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.homeSlideTitle{
+  font-size:12px;
+  font-weight:700;
+}
+.homeSlideSub{
+  font-size:11px;
+  color:var(--muted);
+}
+.homeSlideGo{
+  font-size:11px;
+  padding:5px 8px;
+  border-radius:999px;
+  border:1px solid rgba(251,113,133,.45);
+  color:#fecdd3;
+  background:rgba(7,10,18,.55);
+  text-decoration:none;
+  white-space:nowrap;
+}
+
+.homeNavBtn{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  border:1px solid rgba(27,36,68,.9);
+  background:rgba(7,10,18,.65);
+  color:#fff;
+  cursor:pointer;
+  display:grid;
+  place-items:center;
+}
+.homeNavBtn.prev{ right:8px; }
+.homeNavBtn.next{ left:8px; }
+.homeNavBtn:hover{ border-color:rgba(225,29,72,.55); }
+
+.homeDots{
+  margin-top:8px;
+  display:flex;
+  justify-content:center;
+  gap:6px;
+}
+.homeDot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:rgba(156,163,175,.45);
+  border:none;
+  cursor:pointer;
+  padding:0;
+}
+.homeDot.active{
+  width:18px;
+  border-radius:999px;
+  background:linear-gradient(135deg, var(--red), var(--red2));
+}
+
+.homeSliderFrameFallback{
   width:100%;
   height:180px;
   border:1px solid rgba(27,36,68,.9);
   border-radius:12px;
   background:#080d1a;
+  display:none;
 }
 </style>
 </head>
@@ -561,10 +661,17 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
         <span>اسلایدرهای صفحه اصلی گیم‌رنتر</span>
         <a href="https://gamerenter.ir/" target="_blank" rel="noopener noreferrer">باز کردن سایت</a>
       </div>
+      <div class="homeSliderShell" id="homeSliderShell" aria-live="polite">
+        <div class="homeSliderTrack" id="homeSliderTrack"></div>
+        <button class="homeNavBtn prev" id="homePrev" type="button" aria-label="اسلاید قبلی">❯</button>
+        <button class="homeNavBtn next" id="homeNext" type="button" aria-label="اسلاید بعدی">❮</button>
+      </div>
+      <div class="homeDots" id="homeDots"></div>
       <iframe
-        class="homeSliderFrame"
+        class="homeSliderFrameFallback"
+        id="homeFallback"
         src="https://gamerenter.ir/"
-        title="اسلایدر صفحه اصلی گیم رنتر"
+        title="نمایش صفحه اصلی گیم رنتر"
         loading="lazy"
         referrerpolicy="no-referrer-when-downgrade">
       </iframe>
@@ -591,6 +698,13 @@ const cancelBtn = document.getElementById('cancelBtn');
 
 const grid = document.getElementById('grid');
 const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
+
+const homeSliderShell = document.getElementById('homeSliderShell');
+const homeSliderTrack = document.getElementById('homeSliderTrack');
+const homePrev = document.getElementById('homePrev');
+const homeNext = document.getElementById('homeNext');
+const homeDots = document.getElementById('homeDots');
+const homeFallback = document.getElementById('homeFallback');
 
 let currentController = null;
 let hardTimeoutId = null;
@@ -827,6 +941,99 @@ function cancelRequest(reason){
   btn.disabled = false;
 }
 
+const defaultHomeSlides = [
+  { title:"صفحه اصلی گیم‌رنتر", subtitle:"مشاهده جدیدترین اسلایدرها", image:"logo.png", link:"https://gamerenter.ir/" },
+  { title:"پیشنهادهای ویژه", subtitle:"دسترسی سریع به بنرهای اصلی سایت", image:"logo.png", link:"https://gamerenter.ir/" },
+  { title:"کمپین‌ها و جشنواره‌ها", subtitle:"برای دیدن همه اسلایدرها وارد سایت شوید", image:"logo.png", link:"https://gamerenter.ir/" }
+];
+
+let homeSliderState = { index: 0, timer: null, total: 0 };
+
+function sanitizeText(v){
+  return String(v || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function renderHomeSlides(slides){
+  const safeSlides = (Array.isArray(slides) && slides.length ? slides : defaultHomeSlides).slice(0, 8);
+  homeSliderState.total = safeSlides.length;
+
+  homeSliderTrack.innerHTML = safeSlides.map((slide, idx) => `
+    <article class="homeSlide" data-index="${idx}">
+      <img src="${sanitizeText(slide.image || 'logo.png')}" alt="${sanitizeText(slide.title || 'اسلایدر گیم‌رنتر')}" loading="lazy">
+      <div class="homeSlideOverlay">
+        <div class="homeSlideMeta">
+          <div class="homeSlideTitle">${sanitizeText(slide.title || 'اسلایدر گیم‌رنتر')}</div>
+          <div class="homeSlideSub">${sanitizeText(slide.subtitle || 'اسلایدر صفحه اصلی')}</div>
+        </div>
+        <a class="homeSlideGo" href="${sanitizeText(slide.link || 'https://gamerenter.ir/')}" target="_blank" rel="noopener noreferrer">مشاهده</a>
+      </div>
+    </article>
+  `).join('');
+
+  homeDots.innerHTML = safeSlides.map((_, idx) => `<button class="homeDot ${idx === 0 ? 'active' : ''}" type="button" data-dot="${idx}" aria-label="اسلاید ${idx+1}"></button>`).join('');
+  setHomeSlide(0);
+}
+
+function setHomeSlide(index){
+  if(!homeSliderState.total) return;
+  homeSliderState.index = (index + homeSliderState.total) % homeSliderState.total;
+  homeSliderTrack.style.transform = `translateX(${homeSliderState.index * -100}%)`;
+  homeDots.querySelectorAll('.homeDot').forEach((dot, idx)=>{
+    dot.classList.toggle('active', idx === homeSliderState.index);
+  });
+}
+
+function moveHomeSlide(step){
+  setHomeSlide(homeSliderState.index + step);
+}
+
+function restartHomeAutoPlay(){
+  if(homeSliderState.timer) clearInterval(homeSliderState.timer);
+  homeSliderState.timer = setInterval(()=> moveHomeSlide(1), 4500);
+}
+
+async function setupHomeSlider(){
+  renderHomeSlides(defaultHomeSlides);
+  restartHomeAutoPlay();
+
+  try{
+    const r = await fetch('/api/home-sliders', { cache:'no-store' });
+    const j = await r.json();
+    if(j?.ok && Array.isArray(j.slides) && j.slides.length){
+      renderHomeSlides(j.slides);
+      homeFallback.style.display = 'none';
+      homeSliderShell.style.display = 'block';
+      homeDots.style.display = 'flex';
+      restartHomeAutoPlay();
+      return;
+    }
+  }catch(e){}
+
+  // fallback: اگر گرفتن اسلایدرها ممکن نبود، آی‌فریم سایت اصلی نمایش داده شود.
+  homeSliderShell.style.display = 'none';
+  homeDots.style.display = 'none';
+  homeFallback.style.display = 'block';
+}
+
+homePrev?.addEventListener('click', ()=>{ moveHomeSlide(-1); restartHomeAutoPlay(); });
+homeNext?.addEventListener('click', ()=>{ moveHomeSlide(1); restartHomeAutoPlay(); });
+homeDots?.addEventListener('click', (e)=>{
+  const target = e.target.closest('[data-dot]');
+  if(!target) return;
+  const idx = Number(target.getAttribute('data-dot'));
+  if(Number.isFinite(idx)) setHomeSlide(idx);
+  restartHomeAutoPlay();
+});
+
+homeSliderShell?.addEventListener('mouseenter', ()=>{
+  if(homeSliderState.timer) clearInterval(homeSliderState.timer);
+});
+homeSliderShell?.addEventListener('mouseleave', restartHomeAutoPlay);
+
 (function init(){
   const templates = [
     { key:"xbox", title:"سرورهای Xbox", icon:"🎮" },
@@ -836,6 +1043,7 @@ function cancelRequest(reason){
     { key:"internal", title:"سرورهای داخلی", icon:"🇮🇷" },
   ];
   buildCards(templates);
+  setupHomeSlider();
 })();
 
 cancelBtn.onclick = ()=> cancelRequest("تست رو متوقف کردیم.");
