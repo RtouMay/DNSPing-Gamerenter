@@ -151,6 +151,25 @@ input:focus{
   line-height: 1.9;
 }
 
+.requestConfig{
+  margin-top:10px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.configItem label{
+  margin:0 0 6px;
+  font-size:11px;
+}
+.configItem select{
+  width:100%;
+  padding:14px 12px;
+  border-radius:16px;
+  border:1px solid rgba(27,36,68,.95);
+  background:rgba(11,16,34,.92);
+  color:var(--text);
+}
+
 /* Button */
 button{
   width:100%;
@@ -162,11 +181,25 @@ button{
   font-size:15px;
   cursor:pointer;
   background:linear-gradient(135deg, var(--red), var(--red2));
-  box-shadow:0 12px 30px rgba(225,29,72,.22);
-  transition:.2s;
+  box-shadow:0 12px 30px rgba(225,29,72,.22), 0 0 0 1px rgba(251,113,133,.35) inset, 0 0 22px rgba(225,29,72,.28);
+  transition:transform .2s, box-shadow .25s, filter .25s;
   font-weight:700;
+  position:relative;
+  overflow:hidden;
 }
-button:hover{ transform:translateY(-1px) }
+button::before{
+  content:"";
+  position:absolute;
+  inset:-120% auto auto -60%;
+  width:50%;
+  height:260%;
+  background:linear-gradient(110deg, transparent, rgba(255,255,255,.24), transparent);
+  transform:rotate(15deg);
+  transition:transform .55s ease;
+}
+button:hover{ transform:translateY(-2px); box-shadow:0 18px 38px rgba(225,29,72,.34), 0 0 24px rgba(225,29,72,.38); filter:saturate(1.08)}
+button:hover::before{ transform:translateX(340%) rotate(15deg); }
+button:active{ transform:translateY(0); }
 button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 
 .progress{
@@ -198,6 +231,16 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   line-height:1.9;
 }
 .errorBox.show{ display:block; }
+.errorCatalog{
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(27,36,68,.8);
+  background:rgba(7,10,18,.4);
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.9;
+}
 
 /* Cards */
 .grid{
@@ -627,25 +670,27 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
 }
 .homeSlideGo:hover{ border-color:rgba(251,113,133,.85); transform:translateY(-1px); }
 
-.homeDots{
+.copyrightTicker{
   margin-top:8px;
-  display:flex;
-  justify-content:center;
-  gap:6px;
+  min-height:42px;
+  border:1px solid rgba(251,113,133,.25);
+  border-radius:12px;
+  background:rgba(7,10,18,.55);
+  display:grid;
+  place-items:center;
+  padding:8px 12px;
+  text-align:center;
+  color:#fecdd3;
+  font-size:12px;
+  line-height:1.9;
 }
-.homeDot{
-  width:7px;
-  height:7px;
-  border-radius:50%;
-  background:rgba(156,163,175,.45);
-  border:none;
-  cursor:pointer;
-  padding:0;
+.copyrightTicker span{
+  display:inline-block;
+  animation: tickerFade 5s ease-in-out infinite;
 }
-.homeDot.active{
-  width:18px;
-  border-radius:999px;
-  background:linear-gradient(135deg, var(--red), var(--red2));
+@keyframes tickerFade{
+  0%,100%{opacity:.35; transform:translateY(3px)}
+  16%,84%{opacity:1; transform:translateY(0)}
 }
 
 .homeSliderFrameFallback{
@@ -694,7 +739,24 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     </div>
 
     <div class="helper">
+      برای نتیجه دقیق‌تر می‌تونی تعداد ریکوئست همزمان و تایم‌اوت رو تنظیم کنی. حالت خودکار بر اساس کیفیت اینترنتت تنظیم میشه.
+    </div>
 
+    <div class="requestConfig">
+      <div class="configItem">
+        <label for="conc">درخواست همزمان (۱ تا ۱۰۰)</label>
+        <input id="conc" inputmode="numeric" value="16" placeholder="مثال: 16">
+      </div>
+      <div class="configItem">
+        <label for="timeout">تایم‌اوت هر دامنه</label>
+        <select id="timeout">
+          <option value="">خودکار (پیشنهادی)</option>
+          <option value="1400">سریع (1400ms)</option>
+          <option value="2400">متعادل (2400ms)</option>
+          <option value="3600">دقیق‌تر (3600ms)</option>
+          <option value="5000">بدون عجله (5000ms)</option>
+        </select>
+      </div>
     </div>
 
     <button id="btn">بزن بریم برای تست</button>
@@ -702,6 +764,9 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     <div class="progress"><i id="bar"></i></div>
 
     <div class="errorBox" id="err"></div>
+    <div class="errorCatalog" id="errorCatalog">
+      خطاهای شناخته‌شده: invalid_primary / invalid_secondary / same_dns / TIMEOUT / SERVFAIL / NXDOMAIN / server_error
+    </div>
 
     <div class="grid" id="grid"></div>
 
@@ -713,7 +778,7 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       <div class="homeSliderShell" id="homeSliderShell" aria-live="polite">
         <div class="homeSliderTrack" id="homeSliderTrack"></div>
       </div>
-      <div class="homeDots" id="homeDots"></div>
+      <div class="copyrightTicker" id="copyrightTicker" aria-live="polite"></div>
       <iframe
         class="homeSliderFrameFallback"
         id="homeFallback"
@@ -737,6 +802,9 @@ const primary = document.getElementById('primary');
 const secondary = document.getElementById('secondary');
 const bar = document.getElementById('bar');
 const err = document.getElementById('err');
+const errorCatalog = document.getElementById('errorCatalog');
+const concInput = document.getElementById('conc');
+const timeoutInput = document.getElementById('timeout');
 
 const loader = document.getElementById('loader');
 const loaderText = document.getElementById('loaderText');
@@ -748,7 +816,7 @@ const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
 
 const homeSliderShell = document.getElementById('homeSliderShell');
 const homeSliderTrack = document.getElementById('homeSliderTrack');
-const homeDots = document.getElementById('homeDots');
+const copyrightTicker = document.getElementById('copyrightTicker');
 const homeFallback = document.getElementById('homeFallback');
 
 let currentController = null;
@@ -775,6 +843,28 @@ function showError(msg){
 function clearError(){
   err.textContent = '';
   err.classList.remove('show');
+}
+
+function updateErrorCatalog(result){
+  if(!errorCatalog) return;
+  if(!result){
+    errorCatalog.textContent = "خطاهای شناخته‌شده: invalid_primary / invalid_secondary / same_dns / TIMEOUT / SERVFAIL / NXDOMAIN / server_error";
+    return;
+  }
+  const buckets = [];
+  const groups = result.groups || [];
+  groups.forEach(g=>{
+    const entries = Object.entries(g.errorSummary || {});
+    if(entries.length){
+      const joined = entries.map(([k,v])=> `${k}:${v}`).join(' ، ');
+      buckets.push(`${g.title}: ${joined}`);
+    }
+  });
+  if(!buckets.length){
+    errorCatalog.textContent = "✅ هیچ خطای DNS مهمی دیده نشد؛ همه گروه‌ها پاسخ قابل استفاده داشتن.";
+    return;
+  }
+  errorCatalog.textContent = `گزارش کامل خطاها: ${buckets.join(' | ')}`;
 }
 
 function showLoader(text){
@@ -910,7 +1000,8 @@ function renderDnsBlock(label, g, requested, meta){
     `;
   }
 
-  const blockMeta = failText || `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
+  const profile = meta?.networkProfile?.quality ? ` • پروفایل: ${meta.networkProfile.quality}` : '';
+  const blockMeta = failText || `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}${profile}`;
   const items = (g.items || []).map(it=>{
     const tagCls = it.ok ? "ok" : "fail";
     const tagTxt = it.ok ? (`Ping: ${it.ms}ms`) : "Fail";
@@ -1007,6 +1098,13 @@ const featuredHomeSlides = [
 ];
 
 let homeSliderState = { index: 0, timer: null, total: 0 };
+const sliderCopyLines = [
+  "گیم‌رنتر؛ جایی که گیمرها بدون دردسر، آیتم اصلی می‌گیرن 🎮",
+  "اگه گیمر حرفه‌ای باشی، گیم‌رنتر رفیق ثابت خریداته ⚡",
+  "هر ۵ ثانیه یه یادآوری: خرید امن اکانت و گیفت‌کارت از Gamerenter ✨",
+  "از پلن اقتصادی تا حرفه‌ای، گیم‌رنتر هواتو داره 🔥",
+];
+let copyIndex = 0;
 
 function sanitizeText(v){
   return String(v || "")
@@ -1014,6 +1112,16 @@ function sanitizeText(v){
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function setTickerText(text){
+  if(!copyrightTicker) return;
+  copyrightTicker.innerHTML = `<span>${sanitizeText(text)}</span>`;
+}
+
+function rotateTicker(){
+  setTickerText(sliderCopyLines[copyIndex % sliderCopyLines.length]);
+  copyIndex += 1;
 }
 
 function renderHomeSlides(slides){
@@ -1035,8 +1143,6 @@ function renderHomeSlides(slides){
       </div>
     </article>
   `).join('');
-
-  homeDots.innerHTML = safeSlides.map((_, idx) => `<button class="homeDot ${idx === 0 ? 'active' : ''}" type="button" data-dot="${idx}" aria-label="اسلاید ${idx+1}"></button>`).join('');
   setHomeSlide(0);
 }
 
@@ -1044,9 +1150,6 @@ function setHomeSlide(index){
   if(!homeSliderState.total) return;
   homeSliderState.index = (index + homeSliderState.total) % homeSliderState.total;
   homeSliderTrack.style.transform = `translateX(${homeSliderState.index * -100}%)`;
-  homeDots.querySelectorAll('.homeDot').forEach((dot, idx)=>{
-    dot.classList.toggle('active', idx === homeSliderState.index);
-  });
 }
 
 function moveHomeSlide(step){
@@ -1055,14 +1158,17 @@ function moveHomeSlide(step){
 
 function restartHomeAutoPlay(){
   if(homeSliderState.timer) clearInterval(homeSliderState.timer);
-  homeSliderState.timer = setInterval(()=> moveHomeSlide(1), 4500);
+  homeSliderState.timer = setInterval(()=>{
+    moveHomeSlide(1);
+    rotateTicker();
+  }, 5000);
 }
 
 async function setupHomeSlider(){
   renderHomeSlides(featuredHomeSlides);
+  rotateTicker();
   homeFallback.style.display = 'none';
   homeSliderShell.style.display = 'block';
-  homeDots.style.display = 'flex';
   restartHomeAutoPlay();
 
   try{
@@ -1072,20 +1178,11 @@ async function setupHomeSlider(){
       renderHomeSlides(j.slides);
       homeFallback.style.display = 'none';
       homeSliderShell.style.display = 'block';
-      homeDots.style.display = 'flex';
       restartHomeAutoPlay();
       return;
     }
   }catch(e){}
 }
-
-homeDots?.addEventListener('click', (e)=>{
-  const target = e.target.closest('[data-dot]');
-  if(!target) return;
-  const idx = Number(target.getAttribute('data-dot'));
-  if(Number.isFinite(idx)) setHomeSlide(idx);
-  restartHomeAutoPlay();
-});
 
 homeSliderShell?.addEventListener('mouseenter', ()=>{
   if(homeSliderState.timer) clearInterval(homeSliderState.timer);
@@ -1108,10 +1205,13 @@ cancelBtn.onclick = ()=> cancelRequest("تست رو متوقف کردیم.");
 
 btn.onclick = async ()=>{
   clearError();
+  updateErrorCatalog(null);
   clearTimers();
 
   const p = normalizeDigits(primary.value.trim());
   const s = normalizeDigits(secondary.value.trim());
+  const conc = Number(normalizeDigits(concInput?.value?.trim?.() || '16'));
+  const timeout = normalizeDigits(timeoutInput?.value || '');
 
   if(!p || !looksLikeIp(p)){
     showError("Primary DNS درست نیست؛ مثلاً 8.8.8.8 بزن.");
@@ -1123,6 +1223,10 @@ btn.onclick = async ()=>{
   }
   if(s && s === p){
     showError("Primary و Secondary یکی هستن؛ یکی‌شون کافیه.");
+    return;
+  }
+  if(!Number.isFinite(conc) || conc < 1 || conc > 100){
+    showError("تعداد درخواست همزمان باید بین ۱ تا ۱۰۰ باشه.");
     return;
   }
 
@@ -1145,7 +1249,7 @@ btn.onclick = async ()=>{
     await new Promise(r=>setTimeout(r, 220));
     setLoaderText("داریم سرورهای داخلی رو تست می‌کنیم…");
 
-    const url = `/api/test?primary=${encodeURIComponent(p)}${s ? `&secondary=${encodeURIComponent(s)}` : ""}`;
+    const url = `/api/test?primary=${encodeURIComponent(p)}${s ? `&secondary=${encodeURIComponent(s)}` : ""}&conc=${encodeURIComponent(String(Math.floor(conc)))}${timeout ? `&timeout=${encodeURIComponent(timeout)}` : ''}`;
     const r = await fetch(url, { cache:"no-store", signal: currentController.signal });
     const j = await r.json();
 
@@ -1172,6 +1276,7 @@ btn.onclick = async ()=>{
 
     const primaryResult = j.results?.primary || {};
     const secondaryResult = j.results?.secondary || {};
+    updateErrorCatalog(primaryResult);
     const primaryGroups = Object.fromEntries((primaryResult.groups || []).map(g=>[g.key, g]));
     const secondaryGroups = Object.fromEntries((secondaryResult.groups || []).map(g=>[g.key, g]));
 
