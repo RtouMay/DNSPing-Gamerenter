@@ -479,6 +479,34 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   font-size:12px;
   line-height:1.9;
 }
+
+.homeSliderWrap{
+  margin-top:12px;
+  border:1px solid rgba(27,36,68,.95);
+  border-radius:16px;
+  background:rgba(11,16,34,.86);
+  padding:10px;
+}
+.homeSliderHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.homeSliderHead a{
+  color:#fda4af;
+  text-decoration:none;
+}
+.homeSliderHead a:hover{ text-decoration:underline; }
+.homeSliderFrame{
+  width:100%;
+  height:180px;
+  border:1px solid rgba(27,36,68,.9);
+  border-radius:12px;
+  background:#080d1a;
+}
 </style>
 </head>
 
@@ -527,6 +555,20 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     <div class="errorBox" id="err"></div>
 
     <div class="grid" id="grid"></div>
+
+    <div class="homeSliderWrap">
+      <div class="homeSliderHead">
+        <span>اسلایدرهای صفحه اصلی گیم‌رنتر</span>
+        <a href="https://gamerenter.ir/" target="_blank" rel="noopener noreferrer">باز کردن سایت</a>
+      </div>
+      <iframe
+        class="homeSliderFrame"
+        src="https://gamerenter.ir/"
+        title="اسلایدر صفحه اصلی گیم رنتر"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade">
+      </iframe>
+    </div>
 
     <div class="footer">
       نتیجه‌ها تقریبیه و بسته به اینترنت یا منطقه‌ات ممکنه فرق داشته باشه.

@@ -53,14 +53,34 @@ function withTimeout(promise, ms, signal) {
 
 async function resolveOnce(resolver, domain, perDomainTimeoutMs, signal) {
   const start = nowMs();
-  try {
-    await withTimeout(resolver.resolve4(domain), perDomainTimeoutMs, signal);
-    const ms = nowMs() - start;
-    return { domain, ok: true, ms, err: null };
-  } catch (e) {
-    const code = (e && e.code) ? e.code : (e && e.message) ? e.message : "FAIL";
-    return { domain, ok: false, ms: null, err: code };
+
+  // بعضی DNSها روی یک نوع رکورد بد جواب می‌دن؛ چند روش رو پشت‌سرهم امتحان می‌کنیم.
+  const methods = [
+    () => resolver.resolve4(domain),
+    () => resolver.resolve6(domain),
+    () => resolver.resolveAny(domain),
+  ];
+
+  let lastErr = null;
+
+  for (const run of methods) {
+    try {
+      const out = await withTimeout(run(), perDomainTimeoutMs, signal);
+      if (Array.isArray(out) && out.length) {
+        const ms = nowMs() - start;
+        return { domain, ok: true, ms, err: null };
+      }
+      lastErr = new Error("EMPTY_ANSWER");
+    } catch (e) {
+      if (e?.message === "ABORTED") {
+        return { domain, ok: false, ms: null, err: "ABORTED" };
+      }
+      lastErr = e;
+    }
   }
+
+  const code = (lastErr && lastErr.code) ? lastErr.code : (lastErr && lastErr.message) ? lastErr.message : "FAIL";
+  return { domain, ok: false, ms: null, err: code };
 }
 
 function avgMs(items) {
