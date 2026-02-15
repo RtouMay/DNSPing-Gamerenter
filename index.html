@@ -527,6 +527,19 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
     linear-gradient(130deg, rgba(18,24,43,.98), rgba(10,15,30,.98));
   overflow:hidden;
 }
+.homeSlide::before{
+  content:"";
+  position:absolute;
+  inset:-20% -10% auto;
+  height:140px;
+  background:linear-gradient(115deg, rgba(251,113,133,.18), rgba(59,130,246,.12), rgba(16,185,129,.16));
+  filter:blur(26px);
+  animation: movingGlow 8s ease-in-out infinite;
+}
+@keyframes movingGlow{
+  0%,100%{ transform:translateX(0) translateY(0) scale(1); }
+  50%{ transform:translateX(-6%) translateY(4%) scale(1.08); }
+}
 .homeSlideOverlay{
   width:100%;
   padding:12px;
@@ -541,6 +554,8 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   gap:8px;
   transform:translateY(0);
   animation: slideFloat 4.5s ease-in-out infinite;
+  position:relative;
+  z-index:1;
 }
 @keyframes slideFloat{
   0%,100%{ transform:translateY(0); }
@@ -550,14 +565,54 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   display:flex;
   flex-direction:column;
   gap:4px;
+  max-width:62%;
 }
 .homeSlideTitle{
-  font-size:12px;
+  font-size:13px;
   font-weight:700;
+  line-height:1.7;
 }
 .homeSlideSub{
   font-size:11px;
   color:var(--muted);
+  line-height:1.8;
+}
+.homeSlideArt{
+  width:96px;
+  height:96px;
+  border-radius:16px;
+  border:1px solid rgba(251,113,133,.28);
+  position:relative;
+  background:linear-gradient(145deg, rgba(14,20,39,.95), rgba(22,29,50,.95));
+  box-shadow: 0 12px 25px rgba(0,0,0,.32);
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+}
+.homeSlideArt::before{
+  content:"";
+  position:absolute;
+  inset:-20%;
+  background:radial-gradient(circle at 20% 20%, rgba(225,29,72,.34), transparent 45%), radial-gradient(circle at 80% 80%, rgba(59,130,246,.3), transparent 50%);
+  animation: artRotate 10s linear infinite;
+}
+.homeSlideArt::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg, rgba(255,255,255,.08), transparent 45%);
+}
+.homeSlideEmoji{
+  position:relative;
+  z-index:2;
+  font-size:36px;
+  filter:drop-shadow(0 5px 14px rgba(0,0,0,.5));
+  animation: emojiPulse 3s ease-in-out infinite;
+}
+@keyframes artRotate{ to{ transform:rotate(360deg); } }
+@keyframes emojiPulse{
+  0%,100%{ transform:scale(1); }
+  50%{ transform:scale(1.08); }
 }
 .homeSlideGo{
   font-size:11px;
@@ -571,27 +626,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
   transition:.2s;
 }
 .homeSlideGo:hover{ border-color:rgba(251,113,133,.85); transform:translateY(-1px); }
-
-.homeNavBtn{
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  width:34px;
-  height:34px;
-  border-radius:10px;
-  border:1px solid rgba(27,36,68,.9);
-  background:rgba(7,10,18,.65);
-  color:#fff;
-  cursor:pointer;
-  display:grid;
-  place-items:center;
-  z-index:2;
-  font-size:18px;
-  font-weight:700;
-}
-.homeNavBtn.prev{ left:8px; }
-.homeNavBtn.next{ right:8px; }
-.homeNavBtn:hover{ border-color:rgba(225,29,72,.55); box-shadow:0 0 0 3px rgba(225,29,72,.10); }
 
 .homeDots{
   margin-top:8px;
@@ -678,8 +712,6 @@ button:disabled{ opacity:.6; cursor:not-allowed; transform:none }
       </div>
       <div class="homeSliderShell" id="homeSliderShell" aria-live="polite">
         <div class="homeSliderTrack" id="homeSliderTrack"></div>
-        <button class="homeNavBtn prev" id="homePrev" type="button" aria-label="اسلاید قبلی">‹</button>
-        <button class="homeNavBtn next" id="homeNext" type="button" aria-label="اسلاید بعدی">›</button>
       </div>
       <div class="homeDots" id="homeDots"></div>
       <iframe
@@ -716,8 +748,6 @@ const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
 
 const homeSliderShell = document.getElementById('homeSliderShell');
 const homeSliderTrack = document.getElementById('homeSliderTrack');
-const homePrev = document.getElementById('homePrev');
-const homeNext = document.getElementById('homeNext');
 const homeDots = document.getElementById('homeDots');
 const homeFallback = document.getElementById('homeFallback');
 
@@ -957,14 +987,22 @@ function cancelRequest(reason){
 
 const featuredHomeSlides = [
   {
-    title:"پیشنهادهای ویژه گیم‌رنتر",
-    subtitle:"مشاهده دسته‌بندی تخفیف‌ها و فروش‌های خاص",
-    link:"https://gamerenter.ir/category/special-sales"
+    title:"اکانت بازی‌های روز با تخفیف ویژه",
+    subtitle:"جدیدترین آیتم‌ها با قیمت‌های محدود و پیشنهاد لحظه‌ای",
+    link:"https://gamerenter.ir/category/special-sales",
+    emoji:"🔥"
   },
   {
-    title:"معرفی Xbox Game Pass",
-    subtitle:"راهنمای کامل پلن‌های Ultimate, Essential و Premium",
-    link:"https://gamerenter.ir/xbox-game-pass-ultimate-essential-premium-introduction"
+    title:"خرید گیم‌پس با ارسال فوری",
+    subtitle:"تحویل سریع برای پلن‌های محبوب Xbox Game Pass",
+    link:"https://gamerenter.ir/xbox-game-pass-ultimate-essential-premium-introduction",
+    emoji:"⚡"
+  },
+  {
+    title:"شارژ کیف پول و گیفت‌کارت قانونی",
+    subtitle:"مناسب خرید داخل بازی و پرداخت‌های بین‌المللی",
+    link:"https://gamerenter.ir/",
+    emoji:"🎁"
   }
 ];
 
@@ -989,8 +1027,11 @@ function renderHomeSlides(slides){
         <div class="homeSlideMeta">
           <div class="homeSlideTitle">${sanitizeText(slide.title || 'لینک ویژه گیم‌رنتر')}</div>
           <div class="homeSlideSub">${sanitizeText(slide.subtitle || 'برای مشاهده جزئیات کلیک کنید')}</div>
+          <a class="homeSlideGo" href="${sanitizeText(slide.link || 'https://gamerenter.ir/')}" target="_blank" rel="noopener noreferrer">ورود</a>
         </div>
-        <a class="homeSlideGo" href="${sanitizeText(slide.link || 'https://gamerenter.ir/')}" target="_blank" rel="noopener noreferrer">ورود</a>
+        <div class="homeSlideArt" aria-hidden="true">
+          <span class="homeSlideEmoji">${sanitizeText(slide.emoji || '🎮')}</span>
+        </div>
       </div>
     </article>
   `).join('');
@@ -1038,8 +1079,6 @@ async function setupHomeSlider(){
   }catch(e){}
 }
 
-homePrev?.addEventListener('click', ()=>{ moveHomeSlide(-1); restartHomeAutoPlay(); });
-homeNext?.addEventListener('click', ()=>{ moveHomeSlide(1); restartHomeAutoPlay(); });
 homeDots?.addEventListener('click', (e)=>{
   const target = e.target.closest('[data-dot]');
   if(!target) return;
