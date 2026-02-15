@@ -548,7 +548,7 @@ const loaderExtra = document.getElementById('loaderExtra');
 const cancelBtn = document.getElementById('cancelBtn');
 
 const grid = document.getElementById('grid');
-const GROUP_ORDER = ["xbox","playstation","games","international","internal","route"];
+const GROUP_ORDER = ["xbox","playstation","games","international","internal"];
 
 let currentController = null;
 let hardTimeoutId = null;
@@ -597,15 +597,15 @@ function fakeProgress(){
 function friendlyError(apiError){
   switch(apiError){
     case "invalid_primary":
-      return "Primary DNS درست خالی است. مثل 8.8.8.8";
+      return "Primary DNS معتبر نیست. نمونه: 8.8.8.8";
     case "invalid_secondary":
-      return "Secondary DNS درست خالی است. اگر لازم ندارید خالی بگذارید.";
+      return "Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.";
     case "private_primary":
       return "Primary DNS خصوصی/لوکال است. بهتر است یک DNS عمومی وارد کنید.";
     case "private_secondary":
       return "Secondary DNS خصوصی/لوکال است. اگر وارد می‌کنید، بهتر است عمومی باشد.";
     case "same_dns":
-      return "Primary و Secondary یکی هستند؛ یکی کافی است.";
+      return "Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.";
     case "server_error":
       return "یک مشکل سمت سرور پیش آمد. لطفاً دوباره امتحان کنید.";
     default:
@@ -620,77 +620,6 @@ function shortenDomain(d){
   const end = d.slice(-10);
   return `${start}…${end}`;
 }
-
-// ---- Route tests (از اینترنت خود کاربر) ----
-// این تست‌ها جایگزین تست DNS خام نیستند؛ اما برای گیمرها معمولاً تصویر دقیق‌تری از کیفیت مسیر می‌دهند.
-// چون از داخل مرورگر اجرا می‌شوند، درخواست‌ها از IP خودِ کاربر ارسال می‌شود.
-const ROUTE_GROUP = {
-  key: "route",
-  label: "Route / Latency (از اینترنت شما)",
-  items: [
-    { domain: "xbox.com" },
-    { domain: "playstation.com" },
-    { domain: "store.steampowered.com" },
-    { domain: "epicgames.com" },
-    { domain: "battle.net" },
-    { domain: "cloudflare.com" },
-    { domain: "google.com" },
-    { domain: "github.com" }
-  ]
-};
-
-function makeTimeoutSignal(ms, parentSignal){
-  const c = new AbortController();
-  const t = setTimeout(()=>c.abort(), ms);
-  const cleanup = ()=>clearTimeout(t);
-  if(parentSignal){
-    if(parentSignal.aborted) c.abort();
-    else parentSignal.addEventListener("abort", ()=>c.abort(), { once:true });
-  }
-  return { signal: c.signal, cleanup };
-}
-
-// HEAD با no-cors: اجازه‌ی خواندن status نداریم، ولی برای سنجش latency شبکه کافی است (opaque موفق = مسیر برقرار)
-async function probeHttp(domain, parentSignal){
-  const url = `https://${domain}/?__t=${Date.now()}${Math.random().toString(16).slice(2)}`;
-  const t0 = performance.now();
-  const { signal, cleanup } = makeTimeoutSignal(3500, parentSignal);
-  try{
-    // mode:no-cors تا CORS جلوی ما را نگیرد
-    await fetch(url, { method: "HEAD", mode: "no-cors", cache: "no-store", signal });
-    const ms = Math.round(performance.now() - t0);
-    return { domain, ok: true, ms };
-  }catch(e){
-    const ms = Math.round(performance.now() - t0);
-    return { domain, ok: false, ms };
-  }finally{
-    cleanup();
-  }
-}
-
-async function runRouteTests(parentSignal){
-  // concurrency محدود برای سرعت بهتر
-  const concurrency = 4;
-  const queue = ROUTE_GROUP.items.map(x=>x.domain);
-  const out = [];
-  const workers = Array.from({length: concurrency}, async ()=>{
-    while(queue.length){
-      const d = queue.shift();
-      const r = await probeHttp(d, parentSignal);
-      out.push(r);
-    }
-  });
-  await Promise.all(workers);
-  // مرتب‌سازی مطابق لیست اولیه
-  const idx = new Map(ROUTE_GROUP.items.map((x,i)=>[x.domain,i]));
-  out.sort((a,b)=>(idx.get(a.domain)-idx.get(b.domain)));
-  const okCount = out.filter(x=>x.ok).length;
-  const total = out.length;
-  const avgMs = okCount ? Math.round(out.filter(x=>x.ok).reduce((s,x)=>s+x.ms,0)/okCount) : null;
-  const status = okCount ? "ok" : "fail";
-  return { key: ROUTE_GROUP.key, label: ROUTE_GROUP.label, status, avgMs, okCount, total, items: out };
-}
-
 
 function buildCards(templateGroups){
   grid.innerHTML = templateGroups.map(g => `
@@ -713,11 +642,11 @@ function buildCards(templateGroups){
       </div>
 
       <div class="actions">
-        <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات</button>
+        <button class="toggleBtn" data-key="${g.key}" data-open="0">جزئیات بیشتر</button>
       </div>
 
       <div class="details" id="details-${g.key}">
-        ${g.key==="route" ? "این بخش چند درخواست ساده را مستقیم با اینترنت خود شما می‌فرستد و زمان پاسخ را نشان می‌دهد. این عددها به نت شما وابسته است و ممکن است بین وای‌فای و اینترنت موبایل فرق کند." : "هنوز تستی انجام نشده."}
+        هنوز تست انجام نشده است.
       </div>
     </div>
   `).join("");
@@ -729,7 +658,7 @@ function buildCards(templateGroups){
       const open = b.getAttribute("data-open") === "1";
       if(open){
         box.classList.remove("expanded");
-        b.textContent = "جزئیات";
+        b.textContent = "جزئیات بیشتر";
         b.setAttribute("data-open","0");
       } else {
         box.classList.add("expanded");
@@ -754,30 +683,17 @@ function setAllTesting(){
     if(st) st.textContent = "در حال تست…";
     const p = document.getElementById(`p-${k}`); if(p) p.textContent = "Primary: …";
     const s = document.getElementById(`s-${k}`); if(s) s.textContent = "Secondary: …";
-    const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال گرفتن نتیجه…";
+    const d = document.getElementById(`details-${k}`); if(d) d.textContent = "در حال دریافت نتیجه…";
   }
 }
 
-function renderDnsBlock(label, g, provided){
-  // provided: آیا کاربر این DNS را وارد کرده؟
-  if(!provided){
-    return `
-      <div class="dBlock">
-        <div class="dTitle">
-          <span>${label}</span>
-          <span class="dMeta">خالی است</span>
-        </div>
-      </div>
-    `;
-  }
-
-  // DNS وارد شده اما نتیجه‌ای نداریم (مثلاً خطا/timeout/قطع درخواست)
+function renderDnsBlock(label, g){
   if(!g){
     return `
       <div class="dBlock">
         <div class="dTitle">
           <span>${label}</span>
-          <span class="dMeta">نتیجه‌ای نگرفتیم</span>
+          <span class="dMeta">وارد نشده</span>
         </div>
       </div>
     `;
@@ -786,7 +702,7 @@ function renderDnsBlock(label, g, provided){
   const meta = `موفق: ${g.okCount}/${g.total} • میانگین: ${g.avgMs == null ? "-" : (g.avgMs + "ms")}`;
   const items = (g.items || []).map(it=>{
     const tagCls = it.ok ? "ok" : "fail";
-    const tagTxt = it.ok ? (it.ms + "ms") : "ناموفق";
+    const tagTxt = it.ok ? (it.ms + "ms") : "FAIL";
     const shown = shortenDomain(it.domain);
     return `
       <div class="dItem">
@@ -807,7 +723,7 @@ function renderDnsBlock(label, g, provided){
   `;
 }
 
-function renderGroup(key, gp, gs, primaryProvided, secondaryProvided){
+function renderGroup(key, gp, gs){
   const box = document.getElementById(`box-${key}`);
   const stateEl = document.getElementById(`state-${key}`);
   const pEl = document.getElementById(`p-${key}`);
@@ -821,26 +737,12 @@ function renderGroup(key, gp, gs, primaryProvided, secondaryProvided){
 
   stateEl.textContent = overallOk ? "قابل استفاده ✅" : "مشکل دارد ❌";
 
-  // برچسب‌های خلاصه بالا (Primary/Secondary)
-  if(!primaryProvided){
-    pEl.textContent = "Primary: -";
-  } else if(!gp){
-    pEl.textContent = "Primary: پاسخ نداد";
-  } else {
-    pEl.textContent = `Primary: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}`;
-  }
-
-  if(!secondaryProvided){
-    sEl.textContent = "Secondary: -";
-  } else if(!gs){
-    sEl.textContent = "Secondary: پاسخ نداد";
-  } else {
-    sEl.textContent = `Secondary: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}`;
-  }
+  pEl.textContent = gp ? `Primary: ${gp.avgMs == null ? "-" : gp.avgMs + "ms"}` : "Primary: -";
+  sEl.textContent = gs ? `Secondary: ${gs.avgMs == null ? "-" : gs.avgMs + "ms"}` : "Secondary: -";
 
   details.innerHTML = `
-    ${renderDnsBlock("Primary DNS", gp, primaryProvided)}
-    ${renderDnsBlock("Secondary DNS", gs, secondaryProvided)}
+    ${renderDnsBlock("Primary DNS", gp)}
+    ${renderDnsBlock("Secondary DNS", gs)}
   `;
 }
 
@@ -870,7 +772,6 @@ function cancelRequest(reason){
     { key:"games", title:"سرور بازی‌های پرطرفدار", icon:"🔥" },
     { key:"international", title:"سرورهای بین‌المللی", icon:"🌍" },
     { key:"internal", title:"سرورهای داخلی", icon:"🇮🇷" },
-    { key:"route", title:"Route / Latency (از اینترنت شما)", icon:"⚡" },
   ];
   buildCards(templates);
 })();
@@ -884,19 +785,16 @@ btn.onclick = async ()=>{
   const p = normalizeDigits(primary.value.trim());
   const s = normalizeDigits(secondary.value.trim());
 
-  const primaryProvided = !!p;
-  const secondaryProvided = !!s;
-
   if(!p || !looksLikeIp(p)){
-    showError("Primary DNS درست خالی است. مثل 8.8.8.8");
+    showError("Primary DNS معتبر نیست. نمونه: 8.8.8.8");
     return;
   }
   if(s && !looksLikeIp(s)){
-    showError("Secondary DNS درست خالی است. اگر لازم ندارید خالی بگذارید.");
+    showError("Secondary DNS معتبر نیست. اگر نیاز ندارید، خالی بگذارید.");
     return;
   }
   if(s && s === p){
-    showError("Primary و Secondary یکی هستند؛ یکی کافی است.");
+    showError("Primary و Secondary یکسان هستند؛ وارد کردن یکی کافی است.");
     return;
   }
 
@@ -905,7 +803,7 @@ btn.onclick = async ()=>{
   showLoader("در حال آماده‌سازی هستیم…");
 
   softTimeoutId = setTimeout(()=> loaderExtra.classList.add("show"), 20000);
-  hardTimeoutId = setTimeout(()=> cancelRequest("یه مشکل سمت سرور پیش آمد."), 120000);
+  hardTimeoutId = setTimeout(()=> cancelRequest("خطا در سرور"), 120000);
 
   const stop = fakeProgress();
   currentController = new AbortController();
@@ -922,15 +820,8 @@ btn.onclick = async ()=>{
     setLoaderText("در حال تست سرورهای داخلی هستیم…");
 
     const url = `/api/test?primary=${encodeURIComponent(p)}${s ? `&secondary=${encodeURIComponent(s)}` : ""}`;
-
-    // همزمان: (۱) تست DNS از سمت سرور (Vercel) + (۲) تست مسیر از سمت کاربر (Route tests)
-    // Route tests از IP کاربر انجام می‌شوند و برای گیمرها معمولاً کاربردی‌ترند.
-    const [apiResp, routeGroup] = await Promise.all([
-      fetch(url, { cache:"no-store", signal: currentController.signal }).then(r=>r.json()).catch(()=>({ ok:false, error:"server_error" })),
-      runRouteTests(currentController.signal).catch(()=>null)
-    ]);
-
-    const j = apiResp;
+    const r = await fetch(url, { cache:"no-store", signal: currentController.signal });
+    const j = await r.json();
 
     stop();
     bar.style.width = "100%";
@@ -938,19 +829,8 @@ btn.onclick = async ()=>{
     currentController = null;
 
     if(!j.ok){
-      // تست DNS از سمت سرور ناموفق بود، ولی Route tests (اگر موجود باشد) هنوز می‌تواند برای کاربر مفید باشد
       hideLoader();
-      showError("تست DNS روی سرور انجام نشد. توی وب‌اپ امکان تست دقیق DNS خام از داخل اینترنت شما وجود ندارد. برای اینکه وضعیت اینترنت خودتان را ببینید، بخش Route / Latency را نگاه کنید.");
-      const primaryGroups = {};
-      const secondaryGroups = {};
-      if(routeGroup){ primaryGroups["route"] = routeGroup; }
-      for(const key of GROUP_ORDER){
-        const gp = primaryGroups[key] || null;
-        const gs = null;
-        // فقط route را داریم
-        if(key !== "route") continue;
-        renderGroup(key, gp, gs, primaryProvided, secondaryProvided);
-      }
+      showError(friendlyError(j.error));
       btn.disabled = false;
       return;
     }
@@ -961,26 +841,23 @@ btn.onclick = async ()=>{
 
     if(!primaryOk && !secondaryOk){
       hideLoader();
-      showError("این DNS از دید سرور در دسترس نیست یا درست جواب نداد. ممکن است روی اینترنت شما کار کند. برای بررسی اینترنت خودتان، بخش Route / Latency را ببینید.");
+      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
       btn.disabled = false;
       return;
     }
 
     // اگر فقط یکی مشکل داشت، پیام رو نمایش می‌دیم ولی نتیجه‌ها هم میاد
     if(!primaryOk || (j.results?.secondary && !secondaryOk)){
-      showError("این DNS از دید سرور در دسترس نیست یا درست جواب نداد. ممکن است روی اینترنت شما کار کند. برای بررسی اینترنت خودتان، بخش Route / Latency را ببینید.");
+      showError("این دی‌ان‌اس آنلاین نیست یا با مشکل کار می‌کنه");
     }
 
     const primaryGroups = Object.fromEntries((j.results?.primary?.groups || []).map(g=>[g.key, g]));
     const secondaryGroups = Object.fromEntries((j.results?.secondary?.groups || []).map(g=>[g.key, g]));
 
-    // اضافه کردن نتیجه‌ی Route tests (از IP کاربر)
-    if(routeGroup){ primaryGroups["route"] = routeGroup; }
-
     for(const key of GROUP_ORDER){
       const gp = primaryGroups[key] || null;
       const gs = (j.results?.secondary ? (secondaryGroups[key] || null) : null);
-      renderGroup(key, gp, gs, primaryProvided, secondaryProvided);
+      renderGroup(key, gp, gs);
       await new Promise(r=>setTimeout(r, 120));
     }
 
@@ -1001,7 +878,7 @@ btn.onclick = async ()=>{
     }
 
     hideLoader();
-    showError("یه مشکل سمت سرور پیش آمد.");
+    showError("خطا در سرور");
   }
 
   setTimeout(()=>btn.disabled=false, 350);
